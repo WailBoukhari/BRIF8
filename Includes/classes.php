@@ -177,6 +177,51 @@ class UserDAO extends BaseDAO
 
         return $stmt->execute();
     }
+    public function disableUser($username)
+    {
+        try {
+            // Update the 'disabled' field in the database
+            $query = "UPDATE users SET disabled = 1 WHERE username = :username";
+            $statement = $this->db->prepare($query);
+            $statement->bindParam(':username', $username, PDO::PARAM_STR);
+            $statement->execute();
+
+            // Check if the user was successfully disabled
+            if ($statement->rowCount() > 0) {
+                return true; // User disabled successfully
+            } else {
+                return false; // User not found or already disabled
+            }
+        } catch (PDOException $e) {
+            // Handle database errors here
+            // You might want to log the error or show a generic error message to the user
+            return false;
+        }
+    }
+    public function getUser($username)
+    {
+        try {
+            // Fetch user data from the database
+            $query = "SELECT * FROM users WHERE username = :username";
+            $statement = $this->db->prepare($query);
+            $statement->bindParam(':username', $username, PDO::PARAM_STR);
+            $statement->execute();
+
+            // Check if a matching user is found
+            if ($statement->rowCount() > 0) {
+                $user = $statement->fetch(PDO::FETCH_ASSOC);
+
+                // Return user data
+                return $user;
+            } else {
+                return null; // User not found
+            }
+        } catch (PDOException $e) {
+            // Handle database errors here
+            // You might want to log the error or show a generic error message to the user
+            return null;
+        }
+    }
 }
 
 class Category
@@ -256,14 +301,21 @@ class CategoryDAO extends BaseDAO
         return $stmt->execute();
     }
 
-    public function deleteCategory($category_id)
+    public function disableCategory($categoryId)
     {
-        $query = "DELETE FROM Categories WHERE category_id = :category_id";
 
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':category_id', $category_id);
+        // Update the 'disabled' status of the category
+        $query = "UPDATE categories SET is_disabled = 1 WHERE id = :categoryId";
+        $statement = $this->db->prepare($query);
+        $statement->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
+        $statement->execute();
 
-        return $stmt->execute();
+        // Check if the category was successfully disabled
+        if ($statement->rowCount() > 0) {
+            return true; // Category disabled successfully
+        } else {
+            return false; // Category not found or not disabled
+        }
     }
 
     public function getCategoryById($category_id)
@@ -460,15 +512,23 @@ class ProductDAO extends BaseDAO
         return $stmt->execute();
     }
 
-    public function deleteProduct($product_id)
+    public function disableProduct($productId)
     {
-        $query = "DELETE FROM Products WHERE product_id = :product_id";
 
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':product_id', $product_id);
+        // Update the 'disabled' status of the product
+        $query = "UPDATE products SET disabled = 1 WHERE id = :productId";
+        $statement = $this->db->prepare($query);
+        $statement->bindParam(':productId', $productId, PDO::PARAM_INT);
+        $statement->execute();
 
-        return $stmt->execute();
+        // Check if the product was successfully disabled
+        if ($statement->rowCount() > 0) {
+            return true; // Product disabled successfully
+        } else {
+            return false; // Product not found or not disabled
+        }
     }
+
 
     public function getProductById($product_id)
     {
