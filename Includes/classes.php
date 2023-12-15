@@ -1,6 +1,6 @@
 <?php
-
-class User extends Database
+// Define DAO classes for each entity
+class User
 {
     private $user_id;
     private $username;
@@ -14,10 +14,19 @@ class User extends Database
     private $disabled;
     private $city;
 
-    public function __construct($conn, $user_id, $username, $email, $password, $role, $verified, $full_name, $phone_number, $address, $disabled, $city)
-    {
-        parent::__construct($conn);
-        $this->user_id = $user_id;
+    // Constructor with optional parameters
+    public function __construct(
+        $username,
+        $email,
+        $password,
+        $role,
+        $verified,
+        $full_name,
+        $phone_number,
+        $address,
+        $disabled,
+        $city
+    ) {
         $this->username = $username;
         $this->email = $email;
         $this->password = $password;
@@ -30,469 +39,893 @@ class User extends Database
         $this->city = $city;
     }
 
-    // User Management
-    public function addUser($username, $email, $password, $role, $verified, $full_name, $phone_number, $address, $disabled, $city)
+
+
+    public function getUsername()
+    {
+        return $this->username;
+    }
+
+    public function getEmail()
+    {
+        return $this->email;
+    }
+    public function getPassword()
+    {
+        return $this->password;
+    }
+    public function getRole()
+    {
+        return $this->role;
+    }
+    public function getVerified()
+    {
+        return $this->verified;
+    }
+    public function getFullName()
+    {
+        return $this->full_name;
+    }
+    public function  getphoneNumber()
+    {
+        return $this->phone_number;
+    }
+    public function getAddress()
+    {
+        return $this->address;
+    }
+    public function getDisabled()
+    {
+        return $this->disabled;
+    }
+    public function getCity()
+    {
+        return $this->city;
+    }
+}
+
+class UserDAO extends BaseDAO
+{
+    public function authenticateUser($username, $password)
+    {
+        try {
+            // Assuming your users table has columns 'username', 'password', 'disabled', 'verified', and 'role'
+            $query = "SELECT * FROM users WHERE username = :username AND password = :password";
+            $statement = $this->db->prepare($query);
+            $statement->bindParam(':username', $username, PDO::PARAM_STR);
+            $statement->bindParam(':password', $password, PDO::PARAM_STR);
+            $statement->execute();
+
+            // Check if a matching user is found
+            if ($statement->rowCount() > 0) {
+                $user = $statement->fetch(PDO::FETCH_ASSOC);
+
+                // Extract user data
+                $disabled = $user['disabled'];
+                $verified = $user['verified'];
+                $role = $user['role'];
+
+                if (!$disabled) {
+                    // Check if the user is verified
+                    if ($verified) {
+                        if ($role == 'admin') {
+                            // Redirect to a dashboard for admin
+                            header('Location: dashboard.php');
+                            exit();
+                        } else {
+                            // Redirect to index for regular user
+                            header('Location: ../index.php');
+                            exit();
+                        }
+                    } else {
+                        // Redirect to unverified page
+                        header('Location: unverified.php');
+                        exit();
+                    }
+                } else {
+                    // Redirect to disabled page
+                    header('Location: disabled.php');
+                    exit();
+                }
+            } else {
+                return false; // Authentication failed (no matching user)
+            }
+        } catch (PDOException $e) {
+            // Handle database errors here
+            // You might want to log the error or show a generic error message to the user
+            return false;
+        }
+    }
+    public function addUser(User $user)
     {
         $query = "INSERT INTO Users (username, email, password, role, verified, full_name, phone_number, address, disabled, city) 
                   VALUES (:username, :email, :password, :role, :verified, :full_name, :phone_number, :address, :disabled, :city)";
 
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':username', $username);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':password', $password);
-        $stmt->bindParam(':role', $role);
-        $stmt->bindParam(':verified', $verified);
-        $stmt->bindParam(':full_name', $full_name);
-        $stmt->bindParam(':phone_number', $phone_number);
-        $stmt->bindParam(':address', $address);
-        $stmt->bindParam(':disabled', $disabled);
-        $stmt->bindParam(':city', $city);
+        $stmt = $this->db->prepare($query);
 
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
+        $stmt->bindParam(':username', $user->getUsername());
+        $stmt->bindParam(':email', $user->getEmail());
+        $stmt->bindParam(':password', $user->getPassword()); // Note: Password hashing should be implemented.
+        $stmt->bindParam(':role', $user->getRole());
+        $stmt->bindParam(':verified', $user->getVerified(), PDO::PARAM_BOOL);
+        $stmt->bindParam(':full_name', $user->getFullName());
+        $stmt->bindParam(':phone_number', $user->getPhoneNumber());
+        $stmt->bindParam(':address', $user->getAddress());
+        $stmt->bindParam(':disabled', $user->getDisabled(), PDO::PARAM_BOOL);
+        $stmt->bindParam(':city', $user->getCity());
+
+        return $stmt->execute();
     }
 
-    public function getUser($username)
+    public function updateUser(User $user)
     {
-        $query = "SELECT * FROM Users WHERE username = :username";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':username', $username);
+        $query = "UPDATE Users SET (username, email, password, role, verified, full_name, phone_number, address, disabled, city) 
+                  VALUES (:username, :email, :password, :role, :verified, :full_name, :phone_number, :address, :disabled, :city)";
+
+        $stmt = $this->db->prepare($query);
+
+        $stmt->bindParam(':username', $user->getUsername());
+        $stmt->bindParam(':email', $user->getEmail());
+        $stmt->bindParam(':password', $user->getPassword()); // Note: Password hashing should be implemented.
+        $stmt->bindParam(':role', $user->getRole());
+        $stmt->bindParam(':verified', $user->getVerified(), PDO::PARAM_BOOL);
+        $stmt->bindParam(':full_name', $user->getFullName());
+        $stmt->bindParam(':phone_number', $user->getPhoneNumber());
+        $stmt->bindParam(':address', $user->getAddress());
+        $stmt->bindParam(':disabled', $user->getDisabled(), PDO::PARAM_BOOL);
+        $stmt->bindParam(':city', $user->getCity());
+
+        return $stmt->execute();
+    }
+}
+
+class Category
+{
+    private $category_id;
+    private $category_name;
+    private $imag_category;
+    private $is_disabled;
+
+    // Constructor with optional parameters
+    public function __construct($category_name, $imag_category, $is_disabled = false)
+    {
+        $this->category_name = $category_name;
+        $this->imag_category = $imag_category;
+        $this->is_disabled = $is_disabled;
+    }
+
+    // Getter methods for retrieving private properties
+    public function getCategoryId()
+    {
+        return $this->category_id;
+    }
+
+    public function getCategoryName()
+    {
+        return $this->category_name;
+    }
+
+    public function getImagCategory()
+    {
+        return $this->imag_category;
+    }
+
+    public function isDisabled()
+    {
+        return $this->is_disabled;
+    }
+
+    // Setter methods for updating private properties
+    public function setCategoryId($category_id)
+    {
+        $this->category_id = $category_id;
+    }
+}
+
+class CategoryDAO extends BaseDAO
+{
+    public function addCategory(Category $category)
+    {
+        $query = "INSERT INTO Categories (category_name, imag_category, is_disabled) 
+                  VALUES (:category_name, :imag_category, :is_disabled)";
+
+        $stmt = $this->db->prepare($query);
+
+        $stmt->bindParam(':category_name', $category->getCategoryName());
+        $stmt->bindParam(':imag_category', $category->getImagCategory());
+        $stmt->bindParam(':is_disabled', $category->isDisabled(), PDO::PARAM_BOOL);
+
+        return $stmt->execute();
+    }
+
+    public function updateCategory(Category $category)
+    {
+        $query = "UPDATE Categories SET 
+                  category_name = :category_name,
+                  imag_category = :imag_category,
+                  is_disabled = :is_disabled
+                  WHERE category_id = :category_id";
+
+        $stmt = $this->db->prepare($query);
+
+        $stmt->bindParam(':category_name', $category->getCategoryName());
+        $stmt->bindParam(':imag_category', $category->getImagCategory());
+        $stmt->bindParam(':is_disabled', $category->isDisabled(), PDO::PARAM_BOOL);
+        $stmt->bindParam(':category_id', $category->getCategoryId());
+
+        return $stmt->execute();
+    }
+
+    public function deleteCategory($category_id)
+    {
+        $query = "DELETE FROM Categories WHERE category_id = :category_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':category_id', $category_id);
+
+        return $stmt->execute();
+    }
+
+    public function getCategoryById($category_id)
+    {
+        $query = "SELECT * FROM Categories WHERE category_id = :category_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':category_id', $category_id);
         $stmt->execute();
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function updateUser($username, $email, $password, $role, $verified, $full_name, $phone_number, $address, $disabled, $city)
-    {
-        $query = "UPDATE Users SET email = :email, password = :password, role = :role, verified = :verified, full_name = :full_name, phone_number = :phone_number, address = :address, disabled = :disabled, city = :city WHERE username = :username";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':username', $username);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':password', $password);
-        $stmt->bindParam(':role', $role);
-        $stmt->bindParam(':verified', $verified);
-        $stmt->bindParam(':full_name', $full_name);
-        $stmt->bindParam(':phone_number', $phone_number);
-        $stmt->bindParam(':address', $address);
-        $stmt->bindParam(':disabled', $disabled);
-        $stmt->bindParam(':city', $city);
-
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public function deleteUser($username)
-    {
-        $query = "DELETE FROM Users WHERE username = :username";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':username', $username);
-
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-class Category extends Database
-{
-
-    public function __construct($conn)
-    {
-        parent::__construct($conn);
-    }
-
-    public function addCategory($category_name, $imag_category, $is_desaybelsd)
-    {
-        $query = "INSERT INTO Categories (category_name, imag_category, is_desaybelsd) VALUES (:category_name, :imag_category, :is_desaybelsd)";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':category_name', $category_name);
-        $stmt->bindParam(':imag_category', $imag_category);
-        $stmt->bindParam(':is_desaybelsd', $is_desaybelsd);
-
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public function getCategory($categoryId)
-    {
-        $query = "SELECT * FROM Categories WHERE id = :categoryId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':categoryId', $categoryId);
-        $stmt->execute();
-
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    public function updateCategory($categoryId, $category_name, $imag_category, $is_desaybelsd)
-    {
-        $query = "UPDATE Categories SET category_name = :category_name, imag_category = :imag_category, is_desaybelsd = :is_desaybelsd WHERE id = :categoryId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':categoryId', $categoryId);
-        $stmt->bindParam(':category_name', $category_name);
-        $stmt->bindParam(':imag_category', $imag_category);
-        $stmt->bindParam(':is_desaybelsd', $is_desaybelsd);
-
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public function deleteCategory($categoryId)
-    {
-        $query = "DELETE FROM Categories WHERE id = :categoryId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':categoryId', $categoryId);
-
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
+    // Add more methods as needed, such as getCategoryByName, getAllCategories, etc.
 }
 
-class Product extends Database
+
+class Product
 {
+    private $product_id;
+    private $reference;
+    private $image;
+    private $barcode;
+    private $label;
+    private $purchase_price;
+    private $final_price;
+    private $price_offer;
+    private $description;
+    private $min_quantity;
+    private $stock_quantity;
+    private $category_id;
+    private $disabled;
 
-
-    public function __construct($conn)
-    {
-        parent::__construct($conn);
+    // Constructor with optional parameters
+    public function __construct(
+        $reference,
+        $image,
+        $barcode,
+        $label,
+        $purchase_price,
+        $final_price,
+        $price_offer,
+        $description,
+        $min_quantity,
+        $stock_quantity,
+        $category_id,
+        $disabled = false
+    ) {
+        $this->reference = $reference;
+        $this->image = $image;
+        $this->barcode = $barcode;
+        $this->label = $label;
+        $this->purchase_price = $purchase_price;
+        $this->final_price = $final_price;
+        $this->price_offer = $price_offer;
+        $this->description = $description;
+        $this->min_quantity = $min_quantity;
+        $this->stock_quantity = $stock_quantity;
+        $this->category_id = $category_id;
+        $this->disabled = $disabled;
     }
 
-    public function addProduct($reference, $image, $barcode, $label, $purchase_price, $final_price, $price_offer, $description, $min_quantity, $stock_quantity, $category_id, $disabled)
+    // Getter methods for retrieving private properties
+    public function getProductId()
+    {
+        return $this->product_id;
+    }
+
+    public function getReference()
+    {
+        return $this->reference;
+    }
+
+    public function getImage()
+    {
+        return $this->image;
+    }
+
+    public function getBarcode()
+    {
+        return $this->barcode;
+    }
+
+    public function getLabel()
+    {
+        return $this->label;
+    }
+
+    public function getPurchasePrice()
+    {
+        return $this->purchase_price;
+    }
+
+    public function getFinalPrice()
+    {
+        return $this->final_price;
+    }
+
+    public function getPriceOffer()
+    {
+        return $this->price_offer;
+    }
+
+    public function getDescription()
+    {
+        return $this->description;
+    }
+
+    public function getMinQuantity()
+    {
+        return $this->min_quantity;
+    }
+
+    public function getStockQuantity()
+    {
+        return $this->stock_quantity;
+    }
+
+    public function getCategoryId()
+    {
+        return $this->category_id;
+    }
+
+    public function isDisabled()
+    {
+        return $this->disabled;
+    }
+
+    // Setter methods for updating private properties
+    public function setProductId($product_id)
+    {
+        $this->product_id = $product_id;
+    }
+}
+
+class ProductDAO extends BaseDAO
+{
+    public function addProduct(Product $product)
     {
         $query = "INSERT INTO Products (reference, image, barcode, label, purchase_price, final_price, price_offer, description, min_quantity, stock_quantity, category_id, disabled) 
                   VALUES (:reference, :image, :barcode, :label, :purchase_price, :final_price, :price_offer, :description, :min_quantity, :stock_quantity, :category_id, :disabled)";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':reference', $reference);
-        $stmt->bindParam(':image', $image);
-        $stmt->bindParam(':barcode', $barcode);
-        $stmt->bindParam(':label', $label);
-        $stmt->bindParam(':purchase_price', $purchase_price);
-        $stmt->bindParam(':final_price', $final_price);
-        $stmt->bindParam(':price_offer', $price_offer);
-        $stmt->bindParam(':description', $description);
-        $stmt->bindParam(':min_quantity', $min_quantity);
-        $stmt->bindParam(':stock_quantity', $stock_quantity);
-        $stmt->bindParam(':category_id', $category_id);
-        $stmt->bindParam(':disabled', $disabled);
 
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
+        $stmt = $this->db->prepare($query);
+
+        $stmt->bindParam(':reference', $product->getReference());
+        $stmt->bindParam(':image', $product->getImage());
+        $stmt->bindParam(':barcode', $product->getBarcode());
+        $stmt->bindParam(':label', $product->getLabel());
+        $stmt->bindParam(':purchase_price', $product->getPurchasePrice());
+        $stmt->bindParam(':final_price', $product->getFinalPrice());
+        $stmt->bindParam(':price_offer', $product->getPriceOffer());
+        $stmt->bindParam(':description', $product->getDescription());
+        $stmt->bindParam(':min_quantity', $product->getMinQuantity());
+        $stmt->bindParam(':stock_quantity', $product->getStockQuantity());
+        $stmt->bindParam(':category_id', $product->getCategoryId());
+        $stmt->bindParam(':disabled', $product->isDisabled(), PDO::PARAM_BOOL);
+
+        return $stmt->execute();
     }
 
-    public function getProduct($productId)
+    public function updateProduct(Product $product)
     {
-        $query = "SELECT * FROM Products WHERE id = :productId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':productId', $productId);
-        $stmt->execute();
+        $query = "UPDATE Products SET 
+                  reference = :reference,
+                  image = :image,
+                  barcode = :barcode,
+                  label = :label,
+                  purchase_price = :purchase_price,
+                  final_price = :final_price,
+                  price_offer = :price_offer,
+                  description = :description,
+                  min_quantity = :min_quantity,
+                  stock_quantity = :stock_quantity,
+                  category_id = :category_id,
+                  disabled = :disabled
+                  WHERE product_id = :product_id";
 
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = $this->db->prepare($query);
+
+        $stmt->bindParam(':reference', $product->getReference());
+        $stmt->bindParam(':image', $product->getImage());
+        $stmt->bindParam(':barcode', $product->getBarcode());
+        $stmt->bindParam(':label', $product->getLabel());
+        $stmt->bindParam(':purchase_price', $product->getPurchasePrice());
+        $stmt->bindParam(':final_price', $product->getFinalPrice());
+        $stmt->bindParam(':price_offer', $product->getPriceOffer());
+        $stmt->bindParam(':description', $product->getDescription());
+        $stmt->bindParam(':min_quantity', $product->getMinQuantity());
+        $stmt->bindParam(':stock_quantity', $product->getStockQuantity());
+        $stmt->bindParam(':category_id', $product->getCategoryId());
+        $stmt->bindParam(':disabled', $product->isDisabled(), PDO::PARAM_BOOL);
+        $stmt->bindParam(':product_id', $product->getProductId());
+
+        return $stmt->execute();
     }
 
-    public function updateProduct($productId, $reference, $image, $barcode, $label, $purchase_price, $final_price, $price_offer, $description, $min_quantity, $stock_quantity, $category_id, $disabled)
+    public function deleteProduct($product_id)
     {
-        $query = "UPDATE Products 
-                  SET reference = :reference, image = :image, barcode = :barcode, label = :label, 
-                      purchase_price = :purchase_price, final_price = :final_price, price_offer = :price_offer, 
-                      description = :description, min_quantity = :min_quantity, stock_quantity = :stock_quantity, 
-                      category_id = :category_id, disabled = :disabled 
-                  WHERE id = :productId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':productId', $productId);
-        $stmt->bindParam(':reference', $reference);
-        $stmt->bindParam(':image', $image);
-        $stmt->bindParam(':barcode', $barcode);
-        $stmt->bindParam(':label', $label);
-        $stmt->bindParam(':purchase_price', $purchase_price);
-        $stmt->bindParam(':final_price', $final_price);
-        $stmt->bindParam(':price_offer', $price_offer);
-        $stmt->bindParam(':description', $description);
-        $stmt->bindParam(':min_quantity', $min_quantity);
-        $stmt->bindParam(':stock_quantity', $stock_quantity);
-        $stmt->bindParam(':category_id', $category_id);
-        $stmt->bindParam(':disabled', $disabled);
+        $query = "DELETE FROM Products WHERE product_id = :product_id";
 
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public function deleteProduct($productId)
-    {
-        $query = "DELETE FROM Products WHERE id = :productId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':productId', $productId);
-
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-
-class Order extends Database
-{
-
-    public function __construct($conn)
-    {
-        parent::__construct($conn);
-    }
-
-    public function addOrder($user_id, $order_state_id, $total_price, $date)
-    {
-        $query = "INSERT INTO Orders (user_id, order_state_id, total_price, date) VALUES (:user_id, :order_state_id, :total_price, :date)";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':user_id', $user_id);
-        $stmt->bindParam(':order_state_id', $order_state_id);
-        $stmt->bindParam(':total_price', $total_price);
-        $stmt->bindParam(':date', $date);
-
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public function getOrder($orderId)
-    {
-        $query = "SELECT * FROM Orders WHERE id = :orderId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':orderId', $orderId);
-        $stmt->execute();
-
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    public function updateOrder($orderId, $user_id, $order_state_id, $total_price, $date)
-    {
-        $query = "UPDATE Orders SET user_id = :user_id, order_state_id = :order_state_id, total_price = :total_price, date = :date WHERE id = :orderId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':orderId', $orderId);
-        $stmt->bindParam(':user_id', $user_id);
-        $stmt->bindParam(':order_state_id', $order_state_id);
-        $stmt->bindParam(':total_price', $total_price);
-        $stmt->bindParam(':date', $date);
-
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public function deleteOrder($orderId)
-    {
-        $query = "DELETE FROM Orders WHERE id = :orderId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':orderId', $orderId);
-
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-
-
-class OrderDetail extends Database
-{
-    public function __construct($conn)
-    {
-        parent::__construct($conn);
-    }
-
-    public function addOrderDetail($order_id, $product_id, $quantity, $price)
-    {
-        $query = "INSERT INTO OrderDetails (order_id, product_id, quantity, price) VALUES (:order_id, :product_id, :quantity, :price)";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':order_id', $order_id);
+        $stmt = $this->db->prepare($query);
         $stmt->bindParam(':product_id', $product_id);
-        $stmt->bindParam(':quantity', $quantity);
-        $stmt->bindParam(':price', $price);
 
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
+        return $stmt->execute();
     }
 
-    public function getOrderDetail($orderDetailId)
+    public function getProductById($product_id)
     {
-        $query = "SELECT * FROM OrderDetails WHERE id = :orderDetailId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':orderDetailId', $orderDetailId);
-        $stmt->execute();
+        $query = "SELECT * FROM Products WHERE product_id = :product_id";
 
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    public function updateOrderDetail($orderDetailId, $order_id, $product_id, $quantity, $price)
-    {
-        $query = "UPDATE OrderDetails SET order_id = :order_id, product_id = :product_id, quantity = :quantity, price = :price WHERE id = :orderDetailId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':orderDetailId', $orderDetailId);
-        $stmt->bindParam(':order_id', $order_id);
+        $stmt = $this->db->prepare($query);
         $stmt->bindParam(':product_id', $product_id);
-        $stmt->bindParam(':quantity', $quantity);
-        $stmt->bindParam(':price', $price);
-
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public function deleteOrderDetail($orderDetailId)
-    {
-        $query = "DELETE FROM OrderDetails WHERE id = :orderDetailId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':orderDetailId', $orderDetailId);
-
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-
-class UserState extends Database
-{
-    public function __construct($conn)
-    {
-        parent::__construct($conn);
-    }
-
-    public function addUserState($state_name)
-    {
-        $query = "INSERT INTO UserStates (state_name) VALUES (:state_name)";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':state_name', $state_name);
-
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public function getUserState($userStateId)
-    {
-        $query = "SELECT * FROM UserStates WHERE id = :userStateId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':userStateId', $userStateId);
         $stmt->execute();
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function updateUserState($userStateId, $state_name)
-    {
-        $query = "UPDATE UserStates SET state_name = :state_name WHERE id = :userStateId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':userStateId', $userStateId);
-        $stmt->bindParam(':state_name', $state_name);
+    // Add more methods as needed, such as getProductByBarcode, getAllProducts, etc.
+}
 
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
+
+class Order
+{
+    private $order_id;
+    private $user_id;
+    private $order_date;
+    private $send_date;
+    private $delivery_date;
+    private $total_price;
+    private $order_status;
+
+    // Constructor with optional parameters
+    public function __construct($user_id, $order_date, $send_date, $delivery_date, $total_price, $order_status = 'Pending')
+    {
+        $this->user_id = $user_id;
+        $this->order_date = $order_date;
+        $this->send_date = $send_date;
+        $this->delivery_date = $delivery_date;
+        $this->total_price = $total_price;
+        $this->order_status = $order_status;
     }
 
-    public function deleteUserState($userStateId)
+    // Getter methods for retrieving private properties
+    public function getOrderId()
     {
-        $query = "DELETE FROM UserStates WHERE id = :userStateId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':userStateId', $userStateId);
+        return $this->order_id;
+    }
 
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
+    public function getUserId()
+    {
+        return $this->user_id;
+    }
+
+    public function getOrderDate()
+    {
+        return $this->order_date;
+    }
+
+    public function getSendDate()
+    {
+        return $this->send_date;
+    }
+
+    public function getDeliveryDate()
+    {
+        return $this->delivery_date;
+    }
+
+    public function getTotalPrice()
+    {
+        return $this->total_price;
+    }
+
+    public function getOrderStatus()
+    {
+        return $this->order_status;
+    }
+
+    // Setter methods for updating private properties
+    public function setOrderId($order_id)
+    {
+        $this->order_id = $order_id;
     }
 }
 
-class OrderState extends Database
+class OrderDAO extends BaseDAO
 {
-    public function __construct($conn)
+    public function addOrder(Order $order)
     {
-        parent::__construct($conn);
+        $query = "INSERT INTO Orders (user_id, order_date, send_date, delivery_date, total_price, order_status) 
+                  VALUES (:user_id, :order_date, :send_date, :delivery_date, :total_price, :order_status)";
+
+        $stmt = $this->db->prepare($query);
+
+        $stmt->bindParam(':user_id', $order->getUserId());
+        $stmt->bindParam(':order_date', $order->getOrderDate());
+        $stmt->bindParam(':send_date', $order->getSendDate());
+        $stmt->bindParam(':delivery_date', $order->getDeliveryDate());
+        $stmt->bindParam(':total_price', $order->getTotalPrice());
+        $stmt->bindParam(':order_status', $order->getOrderStatus());
+
+        return $stmt->execute();
     }
 
-    public function addOrderState($state_name)
+    public function updateOrder(Order $order)
     {
-        $query = "INSERT INTO OrderStates (state_name) VALUES (:state_name)";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':state_name', $state_name);
+        $query = "UPDATE Orders SET 
+                  user_id = :user_id,
+                  order_date = :order_date,
+                  send_date = :send_date,
+                  delivery_date = :delivery_date,
+                  total_price = :total_price,
+                  order_status = :order_status
+                  WHERE order_id = :order_id";
 
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
+        $stmt = $this->db->prepare($query);
+
+        $stmt->bindParam(':user_id', $order->getUserId());
+        $stmt->bindParam(':order_date', $order->getOrderDate());
+        $stmt->bindParam(':send_date', $order->getSendDate());
+        $stmt->bindParam(':delivery_date', $order->getDeliveryDate());
+        $stmt->bindParam(':total_price', $order->getTotalPrice());
+        $stmt->bindParam(':order_status', $order->getOrderStatus());
+        $stmt->bindParam(':order_id', $order->getOrderId());
+
+        return $stmt->execute();
     }
 
-    public function getOrderState($orderStateId)
+    public function deleteOrder($order_id)
     {
-        $query = "SELECT * FROM OrderStates WHERE id = :orderStateId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':orderStateId', $orderStateId);
+        $query = "DELETE FROM Orders WHERE order_id = :order_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':order_id', $order_id);
+
+        return $stmt->execute();
+    }
+
+    public function getOrderById($order_id)
+    {
+        $query = "SELECT * FROM Orders WHERE order_id = :order_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':order_id', $order_id);
         $stmt->execute();
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function updateOrderState($orderStateId, $state_name)
-    {
-        $query = "UPDATE OrderStates SET state_name = :state_name WHERE id = :orderStateId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':orderStateId', $orderStateId);
-        $stmt->bindParam(':state_name', $state_name);
+    // Add more methods as needed, such as getOrderByUser, getAllOrders, etc.
+}
 
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
+class OrderDetail
+{
+    private $order_detail_id;
+    private $user_id;
+    private $order_id;
+    private $product_id;
+    private $quantity;
+    private $unit_price;
+    private $total_price;
+
+    // Constructor with optional parameters
+    public function __construct($user_id, $order_id, $product_id, $quantity, $unit_price, $total_price)
+    {
+        $this->user_id = $user_id;
+        $this->order_id = $order_id;
+        $this->product_id = $product_id;
+        $this->quantity = $quantity;
+        $this->unit_price = $unit_price;
+        $this->total_price = $total_price;
     }
 
-    public function deleteOrderState($orderStateId)
+    // Getter methods for retrieving private properties
+    public function getOrderDetailId()
     {
-        $query = "DELETE FROM OrderStates WHERE id = :orderStateId";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':orderStateId', $orderStateId);
-
-        if ($stmt->execute()) {
-            return true;
-        } else {
-            return false;
-        }
+        return $this->order_detail_id;
     }
+
+    public function getUserId()
+    {
+        return $this->user_id;
+    }
+
+    public function getOrderId()
+    {
+        return $this->order_id;
+    }
+
+    public function getProductId()
+    {
+        return $this->product_id;
+    }
+
+    public function getQuantity()
+    {
+        return $this->quantity;
+    }
+
+    public function getUnitPrice()
+    {
+        return $this->unit_price;
+    }
+
+    public function getTotalPrice()
+    {
+        return $this->total_price;
+    }
+
+    // Setter methods for updating private properties
+    public function setOrderDetailId($order_detail_id)
+    {
+        $this->order_detail_id = $order_detail_id;
+    }
+}
+
+class OrderDetailDAO extends BaseDAO
+{
+    public function addOrderDetail(OrderDetail $orderDetail)
+    {
+        $query = "INSERT INTO OrderDetails (user_id, order_id, product_id, quantity, unit_price, total_price) 
+                  VALUES (:user_id, :order_id, :product_id, :quantity, :unit_price, :total_price)";
+
+        $stmt = $this->db->prepare($query);
+
+        $stmt->bindParam(':user_id', $orderDetail->getUserId());
+        $stmt->bindParam(':order_id', $orderDetail->getOrderId());
+        $stmt->bindParam(':product_id', $orderDetail->getProductId());
+        $stmt->bindParam(':quantity', $orderDetail->getQuantity());
+        $stmt->bindParam(':unit_price', $orderDetail->getUnitPrice());
+        $stmt->bindParam(':total_price', $orderDetail->getTotalPrice());
+
+        return $stmt->execute();
+    }
+
+    public function updateOrderDetail(OrderDetail $orderDetail)
+    {
+        $query = "UPDATE OrderDetails SET 
+                  user_id = :user_id,
+                  order_id = :order_id,
+                  product_id = :product_id,
+                  quantity = :quantity,
+                  unit_price = :unit_price,
+                  total_price = :total_price
+                  WHERE order_detail_id = :order_detail_id";
+
+        $stmt = $this->db->prepare($query);
+
+        $stmt->bindParam(':user_id', $orderDetail->getUserId());
+        $stmt->bindParam(':order_id', $orderDetail->getOrderId());
+        $stmt->bindParam(':product_id', $orderDetail->getProductId());
+        $stmt->bindParam(':quantity', $orderDetail->getQuantity());
+        $stmt->bindParam(':unit_price', $orderDetail->getUnitPrice());
+        $stmt->bindParam(':total_price', $orderDetail->getTotalPrice());
+        $stmt->bindParam(':order_detail_id', $orderDetail->getOrderDetailId());
+
+        return $stmt->execute();
+    }
+
+    public function deleteOrderDetail($order_detail_id)
+    {
+        $query = "DELETE FROM OrderDetails WHERE order_detail_id = :order_detail_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':order_detail_id', $order_detail_id);
+
+        return $stmt->execute();
+    }
+
+    public function getOrderDetailById($order_detail_id)
+    {
+        $query = "SELECT * FROM OrderDetails WHERE order_detail_id = :order_detail_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':order_detail_id', $order_detail_id);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Add more methods as needed, such as getOrderDetailsByOrderId, getAllOrderDetails, etc.
+}
+
+class UserState
+{
+    private $client_state_id;
+    private $user_id;
+    private $state;
+
+    // Constructor with optional parameters
+    public function __construct($user_id, $state)
+    {
+        $this->user_id = $user_id;
+        $this->state = $state;
+    }
+
+    // Getter methods for retrieving private properties
+    public function getClientStateId()
+    {
+        return $this->client_state_id;
+    }
+
+    public function getUserId()
+    {
+        return $this->user_id;
+    }
+
+    public function getState()
+    {
+        return $this->state;
+    }
+
+    // Setter methods for updating private properties
+    public function setClientStateId($client_state_id)
+    {
+        $this->client_state_id = $client_state_id;
+    }
+}
+
+class UserStateDAO extends BaseDAO
+{
+    public function addUserState(UserState $userState)
+    {
+        $query = "INSERT INTO UserStates (user_id, state) 
+                  VALUES (:user_id, :state)";
+
+        $stmt = $this->db->prepare($query);
+
+        $stmt->bindParam(':user_id', $userState->getUserId());
+        $stmt->bindParam(':state', $userState->getState());
+
+        return $stmt->execute();
+    }
+
+    public function updateUserState(UserState $userState)
+    {
+        $query = "UPDATE UserStates SET 
+                  user_id = :user_id,
+                  state = :state
+                  WHERE client_state_id = :client_state_id";
+
+        $stmt = $this->db->prepare($query);
+
+        $stmt->bindParam(':user_id', $userState->getUserId());
+        $stmt->bindParam(':state', $userState->getState());
+        $stmt->bindParam(':client_state_id', $userState->getClientStateId());
+
+        return $stmt->execute();
+    }
+
+    public function deleteUserState($client_state_id)
+    {
+        $query = "DELETE FROM UserStates WHERE client_state_id = :client_state_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':client_state_id', $client_state_id);
+
+        return $stmt->execute();
+    }
+
+    public function getUserStateById($client_state_id)
+    {
+        $query = "SELECT * FROM UserStates WHERE client_state_id = :client_state_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':client_state_id', $client_state_id);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Add more methods as needed, such as getUserStateByUserId, getAllUserStates, etc.
+}
+
+
+class OrderState
+{
+    private $order_state_id;
+    private $order_id;
+    private $state;
+
+    // Constructor with optional parameters
+    public function __construct($order_id, $state)
+    {
+        $this->order_id = $order_id;
+        $this->state = $state;
+    }
+
+    // Getter methods for retrieving private properties
+    public function getOrderStateId()
+    {
+        return $this->order_state_id;
+    }
+
+    public function getOrderId()
+    {
+        return $this->order_id;
+    }
+
+    public function getState()
+    {
+        return $this->state;
+    }
+
+    // Setter methods for updating private properties
+    public function setOrderStateId($order_state_id)
+    {
+        $this->order_state_id = $order_state_id;
+    }
+}
+
+class OrderStateDAO extends BaseDAO
+{
+    public function addOrderState(OrderState $orderState)
+    {
+        $query = "INSERT INTO OrderStates (order_id, state) 
+                  VALUES (:order_id, :state)";
+
+        $stmt = $this->db->prepare($query);
+
+        $stmt->bindParam(':order_id', $orderState->getOrderId());
+        $stmt->bindParam(':state', $orderState->getState());
+
+        return $stmt->execute();
+    }
+
+    public function updateOrderState(OrderState $orderState)
+    {
+        $query = "UPDATE OrderStates SET 
+                  order_id = :order_id,
+                  state = :state
+                  WHERE order_state_id = :order_state_id";
+
+        $stmt = $this->db->prepare($query);
+
+        $stmt->bindParam(':order_id', $orderState->getOrderId());
+        $stmt->bindParam(':state', $orderState->getState());
+        $stmt->bindParam(':order_state_id', $orderState->getOrderStateId());
+
+        return $stmt->execute();
+    }
+
+    public function deleteOrderState($order_state_id)
+    {
+        $query = "DELETE FROM OrderStates WHERE order_state_id = :order_state_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':order_state_id', $order_state_id);
+
+        return $stmt->execute();
+    }
+
+    public function getOrderStateById($order_state_id)
+    {
+        $query = "SELECT * FROM OrderStates WHERE order_state_id = :order_state_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':order_state_id', $order_state_id);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Add more methods as needed, such as getOrderStateByOrderId, getAllOrderStates, etc.
 }

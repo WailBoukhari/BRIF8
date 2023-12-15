@@ -1,33 +1,25 @@
 <?php
 class Database
 {
-    private $host = "localhost";
-    private $dbname = "ELECTRONACERV4";
-    private $username = "root";
-    private $password = "123";
-    protected $conn;
+    private static $connection;
 
-    public function __construct()
+    public static function getConnection()
     {
-        $this->connect();
-    }
-
-    private function connect()
-    {
-        try {
-            $this->conn = new PDO("mysql:host={$this->host};dbname={$this->dbname}", $this->username, $this->password);
-            $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        } catch (PDOException $e) {
-            echo "Connection failed: " . $e->getMessage();
+        if (!self::$connection) {
+            self::$connection = new PDO('mysql:host=localhost;dbname=ELECTRONACERV4', 'root', '123');
+            self::$connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         }
-    }
-
-    public function getConnection()
-    {
-        return $this->conn;
+        return self::$connection;
     }
 }
 
-// Create an instance of the Database class for reuse
-$database = new Database();
-$conn = $database->getConnection();
+// Define a generic DAO class
+class BaseDAO
+{
+    protected $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getConnection();
+    }
+}

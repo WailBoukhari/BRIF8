@@ -1,40 +1,33 @@
 <?php
+// Include necessary files and classes
 require_once '../Includes/database.php';
-require_once '../Includes/classes.php'; // Assuming you saved the classes in a file named 'classes.php'
-
+require_once '../Includes/classes.php';
 // Check if the form is submitted
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Assuming you have form fields named 'fullName', 'phoneNumber', 'address', 'city', 'email', 'password', etc.
-    $user_id = isset($_POST['user_id']) ? $_POST['user_id'] : '';
-    $username = isset($_POST['username']) ? $_POST['username'] : '';
-    $fullName = isset($_POST['fullName']) ? $_POST['fullName'] : '';
-    $phoneNumber = isset($_POST['phoneNumber']) ? $_POST['phoneNumber'] : '';
-    $address = isset($_POST['address']) ? $_POST['address'] : '';
-    $city = isset($_POST['city']) ? $_POST['city'] : '';
-    $email = isset($_POST['email']) ? $_POST['email'] : '';
-    $password = isset($_POST['password']) ? $_POST['password'] : '';
-    $role = 'user'; // Assuming a default role for a regular user
-    $verified = 0; // Assuming a new user is not verified initially
-    $disabled = 0; // Assuming a new user is not disabled initially
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Get user input
+    $username = $_POST['username'];
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+    $fullName = $_POST['full_name'];
+    $phoneNumber = $_POST['phone_number'];
+    $address = $_POST['address'];
+    $city = $_POST['city'];
 
-    try {
-        // Create an instance of the User class and pass the existing PDO connection
-        $user = new User($conn, $user_id, $username, $email, $password, $role, $verified, $fullName, $phoneNumber, $address, $disabled, $city);
+    // Hash the password (use a secure hashing algorithm in production)
+    $hashedPassword = sha1($password);
 
-        // Add the user
-        $userAdded = $user->addUser($username, $email, $password, $role, $verified, $fullName, $phoneNumber, $address, $disabled, $city);
+    // Create a new user instance
+    $user = new User($username, $email, $hashedPassword, 'user', false, $fullName, $phoneNumber, $address, false, $city);
 
-        if ($userAdded) {
-            echo "User registered successfully!";
-        } else {
-            echo "Error registering user.";
-        }
-    } catch (PDOException $e) {
-        echo "Connection failed: " . $e->getMessage();
-    }
+    // Create a new instance of UserDAO and add the user to the database
+    $userDAO = new UserDAO();
+    $userDAO->addUser($user);
+
+    // Redirect to a success page or login page
+    header('Location: success.php');
+    exit();
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -42,41 +35,67 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>User Registration</title>
 </head>
 
 <body>
-    <h2>User Registration</h2>
 
-    <?php
-    if (isset($error)) {
-        echo "<p style='color: red;'>$error</p>";
-    }
-    ?>
+    <body class="bg-gray-100 flex items-center justify-center h-screen">
+        <div class="bg-white p-8 rounded shadow-md w-96">
+            <h2 class="text-2xl font-semibold mb-4">User Registration</h2>
 
-    <form method="post" action="">
-        <label for="username">Username:</label>
-        <input type="text" name="username" required><br>
-        <label for="fullName">Full Name:</label>
-        <input type="text" name="fullName" required><br>
+            <?php
+            // Display error message if any
+            if (isset($error_message)) {
+                echo '<p style="color: red;">' . $error_message . '</p>';
+            }
 
-        <label for="phoneNumber">Phone Number:</label>
-        <input type="text" name="phoneNumber"><br>
+            // Display success message if any
+            if (isset($success_message)) {
+                echo '<p style="color: green;">' . $success_message . '</p>';
+            }
+            ?>
 
-        <label for="address">Address:</label>
-        <input type="text" name="address"><br>
+            <form method="post" action="" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-600">Username:</label>
+                    <input type="text" name="username" required class="mt-1 p-2 w-full border rounded">
+                </div>
 
-        <label for="city">City:</label>
-        <input type="text" name="city"><br>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-600">Email:</label>
+                    <input type="email" name="email" required class="mt-1 p-2 w-full border rounded">
+                </div>
 
-        <label for="email">Email:</label>
-        <input type="email" name="email" required><br>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-600">Password:</label>
+                    <input type="password" name="password" required class="mt-1 p-2 w-full border rounded">
+                </div>
 
-        <label for="password">Password:</label>
-        <input type="password" name="password" required><br>
+                <div>
+                    <label for="full_name" class="block text-sm font-medium text-gray-600">Full Name:</label>
+                    <input type="text" name="full_name" required class="mt-1 p-2 w-full border rounded">
+                </div>
 
-        <input type="submit" value="Register">
-    </form>
-</body>
+                <div>
+                    <label for="phone_number" class="block text-sm font-medium text-gray-600">Phone Number:</label>
+                    <input type="tel" name="phone_number" required class="mt-1 p-2 w-full border rounded">
+                </div>
+
+                <div>
+                    <label for="address" class="block text-sm font-medium text-gray-600">Address:</label>
+                    <input type="text" name="address" required class="mt-1 p-2 w-full border rounded">
+                </div>
+
+                <div>
+                    <label for="city" class="block text-sm font-medium text-gray-600">City:</label>
+                    <input type="text" name="city" required class="mt-1 p-2 w-full border rounded">
+                </div>
+
+                <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700">Register</button>
+            </form>
+        </div>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </body>
 
 </html>
