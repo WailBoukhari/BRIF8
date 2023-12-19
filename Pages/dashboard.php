@@ -68,7 +68,7 @@ require_once '../Includes/classes.php';
 
     <!-- Include Tailwind CSS (you might want to remove this in production) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
 
 </body>
 

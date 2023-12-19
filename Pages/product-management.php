@@ -3,7 +3,9 @@
 
     <h2 class="text-2xl font-semibold mb-4">Product Management</h2>
 
-    <!-- Product Table -->
+    <div>
+        <a href="add_product.php" class='text-green-500'>Add</a>
+    </div>
 
     <div>
         <h3 class="text-lg font-semibold mb-2">Product List</h3>
@@ -45,13 +47,15 @@
                     echo "<td class='border p-2'>{$product->getDescription()}</td>";
                     echo "<td class='border p-2'>{$product->getMinQuantity()}</td>";
                     echo "<td class='border p-2'>{$product->getStockQuantity()}</td>";
-                    echo "<td class='border p-2'>{$product->getCategoryId()}</td>";
+                    $categorytDAO = new CategoryDAO();
+                    $category = $categorytDAO->getCategoryById($product->getCategoryId());
+                    echo "<td class='border p-2'>{$category->getCategoryName()}</td>";
                     $disabledText = ($product->isDisabled()) ? 'Yes' : 'No';
                     echo "<td class='border p-2'>{$disabledText}</td>";
                     echo "<td class='border p-2'>";
                     echo "<a href='edit_product.php?id={$product->getProductId()}' class='text-blue-500'>Edit</a>";
                     echo " | ";
-                    echo "<a href='delete_product.php?id={$product->getProductId()}' class='text-red-500'>Delete</a>";
+                    echo "<a href='disable_product.php?id={$product->getProductId()}' class='text-red-500'>Disable</a>";
                     echo "</td>";
                     echo "</tr>";
                 }

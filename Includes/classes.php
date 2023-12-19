@@ -320,14 +320,16 @@ class Category
     private $is_disabled;
 
     // Constructor with optional parameters
-    public function __construct($category_name, $imag_category, $is_disabled = false)
+    public function __construct($category_id, $category_name, $imag_category, $is_disabled = false)
     {
+        $this->category_id = $category_id;
         $this->category_name = $category_name;
         $this->imag_category = $imag_category;
         $this->is_disabled = $is_disabled;
     }
 
     // Getter methods for retrieving private properties
+
     public function getCategoryId()
     {
         return $this->category_id;
@@ -357,17 +359,26 @@ class Category
 
 class CategoryDAO extends BaseDAO
 {
-    public function getCategory()
+    public function getAllCategories()
     {
-
-        $query = "SELECT * FROM Categories";
+        $query = "SELECT * FROM Categories"; // Replace 'categories' with your actual table name
         $statement = $this->db->prepare($query);
         $statement->execute();
 
-        // Fetch all users
-        $Categories = $statement->fetchAll(PDO::FETCH_ASSOC);
+        // Fetch all categories
+        $categories = $statement->fetchAll(PDO::FETCH_ASSOC);
 
-        return $Categories;
+        // Convert the associative array to an array of Category objects
+        $categoryObjects = [];
+        foreach ($categories as $category) {
+            $categoryObjects[] = new Category(
+                $category['category_id'],
+                $category['category_name'],
+                $category['imag_category'],
+            );
+        }
+
+        return $categoryObjects;
     }
     public function addCategory(Category $category)
     {
@@ -426,10 +437,23 @@ class CategoryDAO extends BaseDAO
         $stmt->bindParam(':category_id', $category_id);
         $stmt->execute();
 
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
+        $categoryData = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Check if user data is fetched
+        if ($categoryData) {
+            // Create a new User object with the fetched data
+            $category = new Category(
+                $categoryData['category_id'],
+                $categoryData['category_name'],
+                $categoryData['imag_category'],
+                $categoryData['is_disabled'],
 
-    // Add more methods as needed, such as getCategoryByName, getAllCategories, etc.
+            );
+
+            return $category;
+        } else {
+            return null; // User not found
+        }
+    }
 }
 
 
@@ -551,6 +575,10 @@ class Product
     {
         $this->product_id = $product_id;
     }
+    public function setImage($image)
+    {
+        $this->image = $image;
+    }
 }
 
 class ProductDAO extends BaseDAO
@@ -562,18 +590,31 @@ class ProductDAO extends BaseDAO
 
         $stmt = $this->db->prepare($query);
 
-        $stmt->bindParam(':reference', $product->getReference());
-        $stmt->bindParam(':image', $product->getImage());
-        $stmt->bindParam(':barcode', $product->getBarcode());
-        $stmt->bindParam(':label', $product->getLabel());
-        $stmt->bindParam(':purchase_price', $product->getPurchasePrice());
-        $stmt->bindParam(':final_price', $product->getFinalPrice());
-        $stmt->bindParam(':price_offer', $product->getPriceOffer());
-        $stmt->bindParam(':description', $product->getDescription());
-        $stmt->bindParam(':min_quantity', $product->getMinQuantity());
-        $stmt->bindParam(':stock_quantity', $product->getStockQuantity());
-        $stmt->bindParam(':category_id', $product->getCategoryId());
-        $stmt->bindParam(':disabled', $product->isDisabled(), PDO::PARAM_BOOL);
+        $reference = $product->getReference();
+        $image = $product->getImage();
+        $barcode = $product->getBarcode();
+        $label = $product->getLabel();
+        $purchase_price = $product->getPurchasePrice();
+        $final_price = $product->getFinalPrice();
+        $price_offer = $product->getPriceOffer();
+        $description = $product->getDescription();
+        $min_quantity = $product->getMinQuantity();
+        $stock_quantity = $product->getStockQuantity();
+        $category_id = $product->getCategoryId();
+        $disabled = $product->isDisabled();
+
+        $stmt->bindParam(':reference', $reference);
+        $stmt->bindParam(':image', $image);
+        $stmt->bindParam(':barcode', $barcode);
+        $stmt->bindParam(':label', $label);
+        $stmt->bindParam(':purchase_price', $purchase_price);
+        $stmt->bindParam(':final_price', $final_price);
+        $stmt->bindParam(':price_offer', $price_offer);
+        $stmt->bindParam(':description', $description);
+        $stmt->bindParam(':min_quantity', $min_quantity);
+        $stmt->bindParam(':stock_quantity', $stock_quantity);
+        $stmt->bindParam(':category_id', $category_id);
+        $stmt->bindParam(':disabled', $disabled, PDO::PARAM_BOOL);
 
         return $stmt->execute();
     }
@@ -614,6 +655,7 @@ class ProductDAO extends BaseDAO
         return $stmt->execute();
     }
 
+
     public function disableProduct($productId)
     {
 
@@ -640,7 +682,31 @@ class ProductDAO extends BaseDAO
         $stmt->bindParam(':product_id', $product_id);
         $stmt->execute();
 
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $productData = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Check if user data is fetched
+        if ($productData) {
+            // Create a new User object with the fetched data
+            $product = new Product(
+                $productData['product_id'],
+                $productData['reference'],
+                $productData['image'],
+                $productData['barcode'],
+                $productData['label'],
+                $productData['purchase_price'],
+                $productData['final_price'],
+                $productData['price_offer'],
+                $productData['description'],
+                $productData['min_quantity'],
+                $productData['stock_quantity'],
+                $productData['category_id'],
+                $productData['disabled']
+
+            );
+
+            return $product;
+        } else {
+            return null; // User not found
+        }
     }
 
     public function getAllProducts()
@@ -1102,4 +1168,37 @@ class OrderStateDAO extends BaseDAO
     }
 
     // Add more methods as needed, such as getOrderStateByOrderId, getAllOrderStates, etc.
+}
+class ImageUploader
+{
+    public static function uploadImage()
+    {
+        $targetDirectory = "../imgs"; // Change this to your desired directory
+        $targetFile = $targetDirectory . basename($_FILES["image"]["name"]);
+        $uploadOk = 1;
+        $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+
+        // Check if image file is a actual image or fake image
+        $check = getimagesize($_FILES["image"]["tmp_name"]);
+        if ($check === false) {
+            return false; // Not an image
+        }
+
+        // Check file size (adjust as needed)
+        if ($_FILES["image"]["size"] > 500000) {
+            return false; // File size too large
+        }
+
+        // Allow certain file formats (adjust as needed)
+        if ($imageFileType !== "jpg" && $imageFileType !== "png" && $imageFileType !== "jpeg" && $imageFileType !== "gif") {
+            return false; // Unsupported file format
+        }
+
+        // Move the file to the target directory
+        if (move_uploaded_file($_FILES["image"]["tmp_name"], $targetFile)) {
+            return $targetFile; // Return the path to the uploaded image
+        } else {
+            return false; // Failed to move the file
+        }
+    }
 }
