@@ -16,6 +16,7 @@ class User
 
     // Constructor with optional parameters
     public function __construct(
+        $user_id,
         $username,
         $email,
         $password,
@@ -27,6 +28,7 @@ class User
         $disabled,
         $city
     ) {
+        $this->user_id = $user_id;
         $this->username = $username;
         $this->email = $email;
         $this->password = $password;
@@ -39,7 +41,10 @@ class User
         $this->city = $city;
     }
 
-
+    public function getUserId()
+    {
+        return $this->user_id;
+    }
 
     public function getUsername()
     {
@@ -82,144 +87,227 @@ class User
     {
         return $this->city;
     }
+    // setter methods
+    public function setUserId($user_id)
+    {
+        $this->user_id = $user_id;
+    }
+    public function setUsername($username)
+    {
+        $this->username = $username;
+    }
+    public function setEmail($email)
+    {
+        $this->email = $email;
+    }
+    public function setPassword($password)
+    {
+        $this->password = $password;
+    }
+    public function setRole($role)
+    {
+        $this->role = $role;
+    }
+    public function setVerified($verified)
+    {
+        $this->verified = $verified;
+    }
+    public function setFullName($full_name)
+    {
+        $this->full_name = $full_name;
+    }
+    public function setPhoneNumber($phone_number)
+    {
+        $this->phone_number = $phone_number;
+    }
+    public function setAddress($address)
+    {
+        $this->address = $address;
+    }
+    public function setDisabled($disabled)
+    {
+        $this->disabled = $disabled;
+    }
+    public function setCity($city)
+    {
+        $this->city = $city;
+    }
 }
 
 class UserDAO extends BaseDAO
 {
     public function authenticateUser($username, $password)
     {
-        try {
-            // Assuming your users table has columns 'username', 'password', 'disabled', 'verified', and 'role'
-            $query = "SELECT * FROM users WHERE username = :username AND password = :password";
-            $statement = $this->db->prepare($query);
-            $statement->bindParam(':username', $username, PDO::PARAM_STR);
-            $statement->bindParam(':password', $password, PDO::PARAM_STR);
-            $statement->execute();
 
-            // Check if a matching user is found
-            if ($statement->rowCount() > 0) {
-                $user = $statement->fetch(PDO::FETCH_ASSOC);
+        // Assuming your users table has columns 'username', 'password', 'disabled', 'verified', and 'role'
+        $query = "SELECT * FROM users WHERE username = :username AND password = :password";
+        $statement = $this->db->prepare($query);
+        $statement->bindParam(':username', $username, PDO::PARAM_STR);
+        $statement->bindParam(':password', $password, PDO::PARAM_STR);
+        $statement->execute();
 
-                // Extract user data
-                $disabled = $user['disabled'];
-                $verified = $user['verified'];
-                $role = $user['role'];
+        // Check if a matching user is found
+        if ($statement->rowCount() > 0) {
+            $user = $statement->fetch(PDO::FETCH_ASSOC);
 
-                if (!$disabled) {
-                    // Check if the user is verified
-                    if ($verified) {
-                        if ($role == 'admin') {
-                            // Redirect to a dashboard for admin
-                            header('Location: dashboard.php');
-                            exit();
-                        } else {
-                            // Redirect to index for regular user
-                            header('Location: ../index.php');
-                            exit();
-                        }
+            // Extract user data
+            $disabled = $user['disabled'];
+            $verified = $user['verified'];
+            $role = $user['role'];
+
+            if (!$disabled) {
+                // Check if the user is verified
+                if ($verified) {
+                    if ($role == 'admin') {
+                        // Redirect to a dashboard for admin
+                        header('Location: dashboard.php');
+                        exit();
                     } else {
-                        // Redirect to unverified page
-                        header('Location: unverified.php');
+                        // Redirect to index for regular user
+                        header('Location: ../index.php');
                         exit();
                     }
                 } else {
-                    // Redirect to disabled page
-                    header('Location: disabled.php');
+                    // Redirect to unverified page
+                    header('Location: unverified.php');
                     exit();
                 }
             } else {
-                return false; // Authentication failed (no matching user)
+                // Redirect to disabled page
+                header('Location: disabled.php');
+                exit();
             }
-        } catch (PDOException $e) {
-            // Handle database errors here
-            // You might want to log the error or show a generic error message to the user
-            return false;
+        } else {
+            return false; // Authentication failed (no matching user)
         }
     }
-    public function addUser(User $user)
+    public function getAllUsers()
     {
-        $query = "INSERT INTO Users (username, email, password, role, verified, full_name, phone_number, address, disabled, city) 
-                  VALUES (:username, :email, :password, :role, :verified, :full_name, :phone_number, :address, :disabled, :city)";
 
-        $stmt = $this->db->prepare($query);
+        $query = "SELECT * FROM Users";
+        $statement = $this->db->prepare($query);
+        $statement->execute();
 
-        $stmt->bindParam(':username', $user->getUsername());
-        $stmt->bindParam(':email', $user->getEmail());
-        $stmt->bindParam(':password', $user->getPassword()); // Note: Password hashing should be implemented.
-        $stmt->bindParam(':role', $user->getRole());
-        $stmt->bindParam(':verified', $user->getVerified(), PDO::PARAM_BOOL);
-        $stmt->bindParam(':full_name', $user->getFullName());
-        $stmt->bindParam(':phone_number', $user->getPhoneNumber());
-        $stmt->bindParam(':address', $user->getAddress());
-        $stmt->bindParam(':disabled', $user->getDisabled(), PDO::PARAM_BOOL);
-        $stmt->bindParam(':city', $user->getCity());
+        // Fetch all users
+        $users = $statement->fetchAll(PDO::FETCH_ASSOC);
 
-        return $stmt->execute();
+        return $users;
+    }
+    public function getUserById($userId)
+    {
+        $query = "SELECT * FROM Users WHERE user_id = :userId";
+        $statement = $this->db->prepare($query);
+        $statement->execute([':userId' => $userId]);
+
+        // Fetch the user data as an associative array
+        $userData = $statement->fetch(PDO::FETCH_ASSOC);
+
+        // Check if user data is fetched
+        if ($userData) {
+            // Create a new User object with the fetched data
+            $user = new User(
+                $userData['user_id'],
+                $userData['username'],
+                $userData['email'],
+                $userData['password'],
+                $userData['role'],
+                $userData['verified'],
+                $userData['full_name'],
+                $userData['phone_number'],
+                $userData['address'],
+                $userData['disabled'],
+                $userData['city']
+            );
+
+            return $user;
+        } else {
+            return null; // User not found
+        }
+    }
+
+    // Method to enable a user
+    public function enableUser($userId)
+    {
+        // Update the 'disabled' column in the database to 0 (enabled)
+        $sql = "UPDATE users SET disabled = 0 WHERE user_id = :userId";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    // Method to disable a user
+    public function disableUser($userId)
+    {
+        // Update the 'disabled' column in the database to 1 (disabled)
+        $sql = "UPDATE users SET disabled = 1 WHERE user_id = :userId";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+        $stmt->execute();
     }
 
     public function updateUser(User $user)
     {
-        $query = "UPDATE Users SET (username, email, password, role, verified, full_name, phone_number, address, disabled, city) 
-                  VALUES (:username, :email, :password, :role, :verified, :full_name, :phone_number, :address, :disabled, :city)";
+        $query = "UPDATE Users 
+            SET username = :username, 
+                email = :email, 
+                password = :password, 
+                role = :role, 
+                verified = :verified, 
+                full_name = :full_name, 
+                phone_number = :phone_number, 
+                address = :address, 
+                disabled = :disabled, 
+                city = :city 
+            WHERE user_id = :user_id";
 
         $stmt = $this->db->prepare($query);
 
-        $stmt->bindParam(':username', $user->getUsername());
-        $stmt->bindParam(':email', $user->getEmail());
-        $stmt->bindParam(':password', $user->getPassword()); // Note: Password hashing should be implemented.
-        $stmt->bindParam(':role', $user->getRole());
-        $stmt->bindParam(':verified', $user->getVerified(), PDO::PARAM_BOOL);
-        $stmt->bindParam(':full_name', $user->getFullName());
-        $stmt->bindParam(':phone_number', $user->getPhoneNumber());
-        $stmt->bindParam(':address', $user->getAddress());
-        $stmt->bindParam(':disabled', $user->getDisabled(), PDO::PARAM_BOOL);
-        $stmt->bindParam(':city', $user->getCity());
+        // Assign values to variables
+        $userId = $user->getUserId();
+        $username = $user->getUsername();
+        $email = $user->getEmail();
+        $hashedPassword = password_hash($user->getPassword(), PASSWORD_DEFAULT);
+        $role = $user->getRole();
+        $verified = $user->getVerified();
+        $fullName = $user->getFullName();
+        $phoneNumber = $user->getPhoneNumber();
+        $address = $user->getAddress();
+        $disabled = $user->getDisabled();
+        $city = $user->getCity();
+
+        // Bind variables
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindParam(':username', $username);
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':password', $hashedPassword); // Password hashing
+        $stmt->bindParam(':role', $role);
+        $stmt->bindParam(':verified', $verified, PDO::PARAM_BOOL);
+        $stmt->bindParam(':full_name', $fullName);
+        $stmt->bindParam(':phone_number', $phoneNumber);
+        $stmt->bindParam(':address', $address);
+        $stmt->bindParam(':disabled', $disabled, PDO::PARAM_BOOL);
+        $stmt->bindParam(':city', $city);
 
         return $stmt->execute();
     }
-    public function disableUser($username)
-    {
-        try {
-            // Update the 'disabled' field in the database
-            $query = "UPDATE users SET disabled = 1 WHERE username = :username";
-            $statement = $this->db->prepare($query);
-            $statement->bindParam(':username', $username, PDO::PARAM_STR);
-            $statement->execute();
 
-            // Check if the user was successfully disabled
-            if ($statement->rowCount() > 0) {
-                return true; // User disabled successfully
-            } else {
-                return false; // User not found or already disabled
-            }
-        } catch (PDOException $e) {
-            // Handle database errors here
-            // You might want to log the error or show a generic error message to the user
-            return false;
-        }
-    }
     public function getUser($username)
     {
-        try {
-            // Fetch user data from the database
-            $query = "SELECT * FROM users WHERE username = :username";
-            $statement = $this->db->prepare($query);
-            $statement->bindParam(':username', $username, PDO::PARAM_STR);
-            $statement->execute();
 
-            // Check if a matching user is found
-            if ($statement->rowCount() > 0) {
-                $user = $statement->fetch(PDO::FETCH_ASSOC);
+        // Fetch user data from the database
+        $query = "SELECT * FROM users WHERE username = :username";
+        $statement = $this->db->prepare($query);
+        $statement->bindParam(':username', $username, PDO::PARAM_STR);
+        $statement->execute();
 
-                // Return user data
-                return $user;
-            } else {
-                return null; // User not found
-            }
-        } catch (PDOException $e) {
-            // Handle database errors here
-            // You might want to log the error or show a generic error message to the user
-            return null;
+        // Check if a matching user is found
+        if ($statement->rowCount() > 0) {
+            $user = $statement->fetch(PDO::FETCH_ASSOC);
+
+            // Return user data
+            return $user;
+        } else {
+            return null; // User not found
         }
     }
 }
@@ -269,6 +357,18 @@ class Category
 
 class CategoryDAO extends BaseDAO
 {
+    public function getCategory()
+    {
+
+        $query = "SELECT * FROM Categories";
+        $statement = $this->db->prepare($query);
+        $statement->execute();
+
+        // Fetch all users
+        $Categories = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        return $Categories;
+    }
     public function addCategory(Category $category)
     {
         $query = "INSERT INTO Categories (category_name, imag_category, is_disabled) 
@@ -351,6 +451,7 @@ class Product
 
     // Constructor with optional parameters
     public function __construct(
+        $product_id,
         $reference,
         $image,
         $barcode,
@@ -364,6 +465,7 @@ class Product
         $category_id,
         $disabled = false
     ) {
+        $this->product_id = $product_id;
         $this->reference = $reference;
         $this->image = $image;
         $this->barcode = $barcode;
@@ -541,14 +643,43 @@ class ProductDAO extends BaseDAO
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // Add more methods as needed, such as getProductByBarcode, getAllProducts, etc.
+    public function getAllProducts()
+    {
+        $query = "SELECT * FROM products"; // Replace 'products' with your actual table name
+        $statement = $this->db->prepare($query);
+        $statement->execute();
+
+        // Fetch all products
+        $products = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        // Convert the associative array to an array of Product objects
+        $productObjects = [];
+        foreach ($products as $product) {
+            $productObjects[] = new Product(
+                $product['product_id'],
+                $product['reference'],
+                $product['image'],
+                $product['barcode'],
+                $product['label'],
+                $product['purchase_price'],
+                $product['final_price'],
+                $product['price_offer'],
+                $product['description'],
+                $product['min_quantity'],
+                $product['stock_quantity'],
+                $product['category_id'],
+                $product['disabled']
+            );
+        }
+
+        return $productObjects;
+    }
 }
 
 
 class Order
 {
-    private $order_id;
-    private $user_id;
+
     private $order_date;
     private $send_date;
     private $delivery_date;
@@ -558,8 +689,7 @@ class Order
     // Constructor with optional parameters
     public function __construct($user_id, $order_date, $send_date, $delivery_date, $total_price, $order_status = 'Pending')
     {
-        $this->user_id = $user_id;
-        $this->order_date = $order_date;
+
         $this->send_date = $send_date;
         $this->delivery_date = $delivery_date;
         $this->total_price = $total_price;
@@ -567,15 +697,6 @@ class Order
     }
 
     // Getter methods for retrieving private properties
-    public function getOrderId()
-    {
-        return $this->order_id;
-    }
-
-    public function getUserId()
-    {
-        return $this->user_id;
-    }
 
     public function getOrderDate()
     {
@@ -603,10 +724,6 @@ class Order
     }
 
     // Setter methods for updating private properties
-    public function setOrderId($order_id)
-    {
-        $this->order_id = $order_id;
-    }
 }
 
 class OrderDAO extends BaseDAO
@@ -618,7 +735,7 @@ class OrderDAO extends BaseDAO
 
         $stmt = $this->db->prepare($query);
 
-        $stmt->bindParam(':user_id', $order->getUserId());
+
         $stmt->bindParam(':order_date', $order->getOrderDate());
         $stmt->bindParam(':send_date', $order->getSendDate());
         $stmt->bindParam(':delivery_date', $order->getDeliveryDate());
@@ -641,13 +758,13 @@ class OrderDAO extends BaseDAO
 
         $stmt = $this->db->prepare($query);
 
-        $stmt->bindParam(':user_id', $order->getUserId());
+
         $stmt->bindParam(':order_date', $order->getOrderDate());
         $stmt->bindParam(':send_date', $order->getSendDate());
         $stmt->bindParam(':delivery_date', $order->getDeliveryDate());
         $stmt->bindParam(':total_price', $order->getTotalPrice());
         $stmt->bindParam(':order_status', $order->getOrderStatus());
-        $stmt->bindParam(':order_id', $order->getOrderId());
+
 
         return $stmt->execute();
     }
@@ -810,13 +927,13 @@ class OrderDetailDAO extends BaseDAO
 class UserState
 {
     private $client_state_id;
-    private $user_id;
+
     private $state;
 
     // Constructor with optional parameters
     public function __construct($user_id, $state)
     {
-        $this->user_id = $user_id;
+
         $this->state = $state;
     }
 
@@ -826,10 +943,7 @@ class UserState
         return $this->client_state_id;
     }
 
-    public function getUserId()
-    {
-        return $this->user_id;
-    }
+
 
     public function getState()
     {
@@ -852,7 +966,7 @@ class UserStateDAO extends BaseDAO
 
         $stmt = $this->db->prepare($query);
 
-        $stmt->bindParam(':user_id', $userState->getUserId());
+
         $stmt->bindParam(':state', $userState->getState());
 
         return $stmt->execute();
@@ -867,7 +981,7 @@ class UserStateDAO extends BaseDAO
 
         $stmt = $this->db->prepare($query);
 
-        $stmt->bindParam(':user_id', $userState->getUserId());
+
         $stmt->bindParam(':state', $userState->getState());
         $stmt->bindParam(':client_state_id', $userState->getClientStateId());
 
