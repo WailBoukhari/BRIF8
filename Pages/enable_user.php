@@ -3,14 +3,15 @@
 require_once '../Includes/database.php';
 require_once '../Includes/classes.php';
 
+
 if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['id'])) {
     $userId = $_GET['id'];
 
-    // Assuming you have a UserDAO class with a method to disable a user
+    // Assuming you have a UserDAO class with a method to enable a user
     $userDAO = new UserDAO();
-    $userDAO->disableUser($userId);
+    $userDAO->enableUser($userId);
 
-    // Redirect back to the user management page after disabling the user
+    // Redirect back to the user management page after enabling the user
     header("Location: dashboard.php?page=user-management");
     exit();
 } else {
