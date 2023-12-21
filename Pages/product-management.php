@@ -55,7 +55,11 @@
                     echo "<td class='border p-2'>";
                     echo "<a href='edit_product.php?id={$product->getProductId()}' class='text-blue-500'>Edit</a>";
                     echo " | ";
-                    echo "<a href='disable_product.php?id={$product->getProductId()}' class='text-red-500'>Disable</a>";
+                    if ($product->isDisabled()) {
+                        echo "<a href='enable_product.php?id={$product->getProductId()}' class='text-green-500 hover:underline'>Enable</a>";
+                    } else {
+                        echo "<a href='disable_product.php?id={$product->getProductId()}' class='text-orange-500 hover:underline'>Disable</a>";
+                    }
                     echo "</td>";
                     echo "</tr>";
                 }

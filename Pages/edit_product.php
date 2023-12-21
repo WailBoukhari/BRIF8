@@ -108,47 +108,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="mb-4">
                 <label for="reference" class="block text-sm font-medium text-gray-600">Reference:</label>
-                <input type="text" id="reference" name="reference" required value="<?= $existingProduct->getReference(); ?>" class="border rounded-md px-3 py-2 w-full">
+                <input type="text" id="reference" name="reference" required
+                    value="<?= $existingProduct->getReference(); ?>" class="border rounded-md px-3 py-2 w-full">
             </div>
 
             <div class="mb-4">
                 <label for="barcode" class="block text-sm font-medium text-gray-600">Barcode:</label>
-                <input type="text" id="barcode" name="barcode" required value="<?= $existingProduct->getBarcode(); ?>" class="border rounded-md px-3 py-2 w-full">
+                <input type="text" id="barcode" name="barcode" required value="<?= $existingProduct->getBarcode(); ?>"
+                    class="border rounded-md px-3 py-2 w-full">
             </div>
 
             <div class="mb-4">
                 <label for="label" class="block text-sm font-medium text-gray-600">Label:</label>
-                <input type="text" id="label" name="label" required value="<?= $existingProduct->getLabel(); ?>" class="border rounded-md px-3 py-2 w-full">
+                <input type="text" id="label" name="label" required value="<?= $existingProduct->getLabel(); ?>"
+                    class="border rounded-md px-3 py-2 w-full">
             </div>
 
             <div class="mb-4">
                 <label for="purchase_price" class="block text-sm font-medium text-gray-600">Purchase Price:</label>
-                <input type="number" id="purchase_price" name="purchase_price" required value="<?= $existingProduct->getPurchasePrice(); ?>" class="border rounded-md px-3 py-2 w-full">
+                <input type="number" id="purchase_price" name="purchase_price" required
+                    value="<?= $existingProduct->getPurchasePrice(); ?>" class="border rounded-md px-3 py-2 w-full">
             </div>
 
             <div class="mb-4">
                 <label for="final_price" class="block text-sm font-medium text-gray-600">Final Price:</label>
-                <input type="number" id="final_price" name="final_price" required value="<?= $existingProduct->getFinalPrice(); ?>" class="border rounded-md px-3 py-2 w-full">
+                <input type="number" id="final_price" name="final_price" required
+                    value="<?= $existingProduct->getFinalPrice(); ?>" class="border rounded-md px-3 py-2 w-full">
             </div>
 
             <div class="mb-4">
                 <label for="price_offer" class="block text-sm font-medium text-gray-600">Price Offer:</label>
-                <input type="number" id="price_offer" name="price_offer" required value="<?= $existingProduct->getPriceOffer(); ?>" class="border rounded-md px-3 py-2 w-full">
+                <input type="number" id="price_offer" name="price_offer" required
+                    value="<?= $existingProduct->getPriceOffer(); ?>" class="border rounded-md px-3 py-2 w-full">
             </div>
 
             <div class="mb-4">
                 <label for="description" class="block text-sm font-medium text-gray-600">Description:</label>
-                <textarea id="description" name="description" rows="4" required class="border rounded-md px-3 py-2 w-full"><?= $existingProduct->getDescription(); ?></textarea>
+                <textarea id="description" name="description" rows="4" required
+                    class="border rounded-md px-3 py-2 w-full"><?= $existingProduct->getDescription(); ?></textarea>
             </div>
 
             <div class="mb-4">
                 <label for="min_quantity" class="block text-sm font-medium text-gray-600">Min Quantity:</label>
-                <input type="number" id="min_quantity" name="min_quantity" required value="<?= $existingProduct->getMinQuantity(); ?>" class="border rounded-md px-3 py-2 w-full">
+                <input type="number" id="min_quantity" name="min_quantity" required
+                    value="<?= $existingProduct->getMinQuantity(); ?>" class="border rounded-md px-3 py-2 w-full">
             </div>
 
             <div class="mb-4">
                 <label for="stock_quantity" class="block text-sm font-medium text-gray-600">Stock Quantity:</label>
-                <input type="number" id="stock_quantity" name="stock_quantity" required value="<?= $existingProduct->getStockQuantity(); ?>" class="border rounded-md px-3 py-2 w-full">
+                <input type="number" id="stock_quantity" name="stock_quantity" required
+                    value="<?= $existingProduct->getStockQuantity(); ?>" class="border rounded-md px-3 py-2 w-full">
             </div>
 
             <div class="mb-4">
@@ -169,7 +178,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="mb-4">
                 <label for="disabled" class="block text-sm font-medium text-gray-600">Disabled:</label>
-                <input type="checkbox" id="disabled" name="disabled" <?= $existingProduct->isDisabled() ? 'checked' : ''; ?> class="border rounded-md px-3 py-2">
+                <input type="checkbox" id="disabled" name="disabled"
+                    <?= $existingProduct->isDisabled() ? 'checked' : ''; ?> class="border rounded-md px-3 py-2">
             </div>
 
             <!-- Display existing product image -->
