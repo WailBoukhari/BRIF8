@@ -18,9 +18,9 @@ function getProducts($categoryId = null)
 
         // Display products
         foreach ($products as $product) {
-            // Display each product as a card with Tailwind CSS styles
-            echo '<div class="max-w-sm rounded overflow-hidden shadow-lg bg-white m-4">';
-            echo '<img class="w-full h-64 object-cover" src="' . $product->getImage() . '" alt="' . $product->getLabel() . '">';
+            // Display each product as a card
+            echo '<div class="max-w-sm rounded overflow-hidden shadow-lg bg-white">';
+            echo '<img class="w-full" src="' . $product->getImage() . '" alt="' . $product->getLabel() . '">';
             echo '<div class="px-6 py-4">';
             echo '<div class="font-bold text-xl mb-2">' . $product->getLabel() . '</div>';
             echo '<p class="text-gray-700 text-base">Description: ' . $product->getDescription() . '</p>';
@@ -42,17 +42,24 @@ function getAllCategories()
     try {
         $categories = $categoryDAO->getAllCategories();
 
-        // Display categories as options in a select dropdown with Tailwind CSS styles
-        echo '<select class="p-2 border" name="categoryFilter" id="categoryFilter" onchange="filterByCategory()">';
+        // Display categories as options in a select dropdown
+        echo '<form method="get">';
+        echo '<label for="categoryFilter">Filter by Category:</label>';
+        echo '<select name="categoryId" id="categoryFilter" onchange="this.form.submit()">';
         echo '<option value="">All Categories</option>';
         foreach ($categories as $category) {
-            echo '<option value="' . $category->getCategoryId() . '">' . $category->getCategoryName() . '</option>';
+            $selected = ($_GET['categoryId'] == $category->getCategoryId()) ? 'selected' : '';
+            echo '<option value="' . $category->getCategoryId() . '" ' . $selected . '>' . $category->getCategoryName() . '</option>';
         }
         echo '</select>';
+        echo '</form>';
     } catch (Exception $e) {
         echo 'Error: ' . $e->getMessage();
     }
 }
+
+// Check if a category filter is set in the URL
+$categoryIdFilter = isset($_GET['categoryId']) ? $_GET['categoryId'] : null;
 ?>
 
 <!DOCTYPE html>
@@ -63,37 +70,23 @@ function getAllCategories()
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product List</title>
     <!-- Add your CSS styles or link to external stylesheets here -->
-    <!-- Add Tailwind CSS CDN or link to your local stylesheet -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
 </head>
 
-<body class="p-4">
+<body>
 
-    <h1 class="text-4xl font-bold mb-8">Product List</h1>
+    <h1>Product List</h1>
 
-    <!-- Display category filter with Tailwind CSS styles -->
-    <div class="mb-4">
-        <label for="categoryFilter" class="text-lg font-semibold">Filter by Category:</label>
+    <!-- Display category filter -->
+    <div>
         <?php getAllCategories(); ?>
     </div>
 
-    <div class="flex flex-wrap">
-        <?php
-        // Call the function to display products
-        getProducts();
-        ?>
-    </div>
+    <?php
+    // Call the function to display products with the category filter
+    getProducts($categoryIdFilter);
+    ?>
 
-    <!-- Add your HTML structure and additional styling as needed -->
-
-    <script>
-        // JavaScript function to handle category filter change
-        function filterByCategory() {
-            var categoryId = document.getElementById('categoryFilter').value;
-            // Reload the page with the selected category filter
-            window.location.href = 'products.php?category=' + categoryId;
-        }
-    </script>
+    <!-- Add your HTML structure and styling as needed -->
 
 </body>
 

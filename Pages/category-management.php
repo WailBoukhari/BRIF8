@@ -30,13 +30,16 @@
                     echo "<td class='border p-2'>{$category->getCategoryId()}</td>";
                     echo "<td class='border p-2'>{$category->getCategoryName()}</td>";
                     echo "<td class='border p-2'><img src='{$category->getImagCategory()}' alt='{$category->getCategoryName()}' class='w-16 h-16'></td>";
-                    $statusText = ($category->isDisabled()) ? 'Disabled' : 'Enabled';
-                    $statusClass = ($category->isDisabled()) ? 'text-red-500' : 'text-green-500';
-                    echo "<td class='border p-2 {$statusClass}'>{$statusText}</td>";
+                    $disabledText = ($category->isDisabled()) ? '<p class="text-orange-500 hover:underline">Disable</p>' : '<p class="text-green-500 hover:underline">Enabled</p>';
+                    echo "<td class='border p-2'>{$disabledText}</td>";
                     echo "<td class='border p-2'>";
                     echo "<a href='edit_category.php?id={$category->getCategoryId()}' class='text-blue-500'>Edit</a>";
                     echo " | ";
-                    echo "<a href='disable_category.php?id={$category->getCategoryId()}' class='text-red-500'>Disable</a>";
+                    if ($category->isDisabled()) {
+                        echo "<a href='enable_category.php?id={$category->getCategoryId()}' class='text-green-500 hover:underline'>Enable</a>";
+                    } else {
+                        echo "<a href='disable_category.php?id={$category->getCategoryId()}' class='text-orange-500 hover:underline'>Disable</a>";
+                    }
                     echo "</td>";
                     echo "</tr>";
                 }

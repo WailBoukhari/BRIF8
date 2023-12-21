@@ -345,7 +345,7 @@ class Category
         return $this->category_img;
     }
 
-    public function isDisabled()
+    public function getDisabled()
     {
         return $this->is_disabled;
     }
@@ -358,6 +358,14 @@ class Category
     public function setCategoryName($category_name)
     {
         $this->category_name = $category_name;
+    }
+    public function setDisabled($is_disabled)
+    {
+        $this->is_disabled = $is_disabled;
+    }
+    public function isDisabled()
+    {
+        return $this->is_disabled;
     }
     public function setImage($category_img)
     {
@@ -397,7 +405,7 @@ class CategoryDAO extends BaseDAO
 
         $stmt->bindParam(':category_name', $category->getCategoryName());
         $stmt->bindParam(':category_img', $category->getImagCategory());
-        $stmt->bindParam(':is_disabled', $category->isDisabled(), PDO::PARAM_BOOL);
+        $stmt->bindParam(':is_disabled', $category->getDisabled(), PDO::PARAM_BOOL);
 
         return $stmt->execute();
     }
@@ -414,7 +422,7 @@ class CategoryDAO extends BaseDAO
 
         $categoryName =  $category->getCategoryName();
         $ImagCategory = $category->getImagCategory();
-        $isDisabled =  $category->isDisabled();
+        $isDisabled =  $category->getDisabled();
         $CategoryId = $category->getCategoryId();
 
         $stmt->bindParam(':category_name', $categoryName);
@@ -429,33 +437,19 @@ class CategoryDAO extends BaseDAO
     {
 
         // Update the 'disabled' status of the category
-        $query = "UPDATE categories SET is_disabled = 1 WHERE category_id = :category_id";
+        $query = "UPDATE Categories SET is_disabled = 1 WHERE category_id = :category_id";
         $statement = $this->db->prepare($query);
         $statement->bindParam(':category_id', $categoryId, PDO::PARAM_INT);
         $statement->execute();
-
-        // Check if the category was successfully disabled
-        if ($statement->rowCount() > 0) {
-            return true; // Category disabled successfully
-        } else {
-            return false; // Category not found or not disabled
-        }
     }
     public function enableCategory($categoryId)
     {
 
         // Update the 'disabled' status of the category
-        $query = "UPDATE categories SET is_disabled = 1 WHERE category_id = :category_id";
+        $query = "UPDATE Categories SET is_disabled = 0 WHERE category_id = :category_id";
         $statement = $this->db->prepare($query);
         $statement->bindParam(':category_id', $categoryId, PDO::PARAM_INT);
         $statement->execute();
-
-        // Check if the category was successfully disabled
-        if ($statement->rowCount() > 0) {
-            return true; // Category disabled successfully
-        } else {
-            return false; // Category not found or not disabled
-        }
     }
     public function getCategoryById($category_id)
     {
@@ -701,22 +695,37 @@ class ProductDAO extends BaseDAO
 
         $stmt = $this->db->prepare($query);
 
-        $stmt->bindParam(':reference', $product->getReference());
-        $stmt->bindParam(':image', $product->getImage());
-        $stmt->bindParam(':barcode', $product->getBarcode());
-        $stmt->bindParam(':label', $product->getLabel());
-        $stmt->bindParam(':purchase_price', $product->getPurchasePrice());
-        $stmt->bindParam(':final_price', $product->getFinalPrice());
-        $stmt->bindParam(':price_offer', $product->getPriceOffer());
-        $stmt->bindParam(':description', $product->getDescription());
-        $stmt->bindParam(':min_quantity', $product->getMinQuantity());
-        $stmt->bindParam(':stock_quantity', $product->getStockQuantity());
-        $stmt->bindParam(':category_id', $product->getCategoryId());
-        $stmt->bindParam(':disabled', $product->isDisabled(), PDO::PARAM_BOOL);
-        $stmt->bindParam(':product_id', $product->getProductId());
+        $product_id = $product->getProductId(); // Assuming you have a getProductId() method
+        $reference = $product->getReference();
+        $image = $product->getImage();
+        $barcode = $product->getBarcode();
+        $label = $product->getLabel();
+        $purchase_price = $product->getPurchasePrice();
+        $final_price = $product->getFinalPrice();
+        $price_offer = $product->getPriceOffer();
+        $description = $product->getDescription();
+        $min_quantity = $product->getMinQuantity();
+        $stock_quantity = $product->getStockQuantity();
+        $category_id = $product->getCategoryId();
+        $disabled = $product->isDisabled();
+
+        $stmt->bindParam(':product_id', $product_id);
+        $stmt->bindParam(':reference', $reference);
+        $stmt->bindParam(':image', $image);
+        $stmt->bindParam(':barcode', $barcode);
+        $stmt->bindParam(':label', $label);
+        $stmt->bindParam(':purchase_price', $purchase_price);
+        $stmt->bindParam(':final_price', $final_price);
+        $stmt->bindParam(':price_offer', $price_offer);
+        $stmt->bindParam(':description', $description);
+        $stmt->bindParam(':min_quantity', $min_quantity);
+        $stmt->bindParam(':stock_quantity', $stock_quantity);
+        $stmt->bindParam(':category_id', $category_id);
+        $stmt->bindParam(':disabled', $disabled, PDO::PARAM_BOOL);
 
         $stmt->execute();
     }
+
 
 
     public function disableProduct($productId)
@@ -1235,39 +1244,37 @@ class OrderStateDAO extends BaseDAO
 }
 class ImageUploader
 {
-    public static function uploadImage()
+    public static function uploadImage($inputName, $targetDirectory)
     {
-        $targetDirectory = "../imgs"; // Change this to your desired directory
-
         // Ensure the target directory exists and is writable
         if (!is_dir($targetDirectory) || !is_writable($targetDirectory)) {
             return false; // Directory not found or not writable
         }
 
-        $fileName = basename($_FILES["category_image"]["name"]); // Change this line
+        $fileName = basename($_FILES[$inputName]["name"]); // Change this line
         $targetFile = $targetDirectory . '/' . uniqid('uploaded_image_') . '_' . time() . '.' . pathinfo($fileName, PATHINFO_EXTENSION);
         $uploadOk = 1;
 
         // Check if image file is an actual image or fake image
-        $check = getimagesize($_FILES["category_image"]["tmp_name"]); // Change this line
+        $check = getimagesize($_FILES[$inputName]["tmp_name"]); // Change this line
         if ($check === false) {
             return false; // Not an image
         }
 
         // Check file size (adjust as needed)
-        if ($_FILES["category_image"]["size"] > 500000) { // Change this line
+        if ($_FILES[$inputName]["size"] > 500000) { // Change this line
             return false; // File size too large
         }
 
         // Use a more robust method to validate image type
-        $imageType = exif_imagetype($_FILES["category_image"]["tmp_name"]); // Change this line
+        $imageType = exif_imagetype($_FILES[$inputName]["tmp_name"]); // Change this line
         $allowedTypes = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF];
         if (!in_array($imageType, $allowedTypes)) {
             return false; // Unsupported file format
         }
 
         // Move the file to the target directory
-        if (move_uploaded_file($_FILES["category_image"]["tmp_name"], $targetFile)) { // Change this line
+        if (move_uploaded_file($_FILES[$inputName]["tmp_name"], $targetFile)) { // Change this line
             return $targetFile; // Return the path to the uploaded image
         } else {
             return false; // Failed to move the file
