@@ -20,10 +20,10 @@ CREATE TABLE Users (
 CREATE TABLE Categories (
     category_id INT PRIMARY KEY AUTO_INCREMENT,
     category_name VARCHAR(255) NOT NULL,
-    imag_category varchar(255) NOT NULL,
+    category_img varchar(255) NOT NULL,
     is_disabled BOOLEAN DEFAULT FALSE NOT NULL
 );
-INSERT INTO Categories (category_name, imag_category, is_disabled)
+INSERT INTO Categories (category_name, category_img, is_disabled)
 VALUES ('Category 1', '../imgs/image.png', FALSE),
     ('Category 2', '../imgs/image.png', FALSE),
     ('Category 3', '../imgs/image.png', FALSE);
@@ -64,23 +64,10 @@ CREATE TABLE OrderDetails (
     quantity INT,
     unit_price DECIMAL(10, 2),
     total_price DECIMAL(10, 2),
+    state ENUM('Validated', 'Cancelled', 'Other'),
     FOREIGN KEY (order_id) REFERENCES Orders(order_id),
     FOREIGN KEY (product_id) REFERENCES Products(product_id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id)
-);
--- Table for client states (assuming admin can manage client states)
-CREATE TABLE UserStates (
-    client_state_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    state ENUM('Validated', 'Cancelled', 'Other'),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id)
-);
--- Table for order states (assuming admin can manage order states)
-CREATE TABLE OrderStates (
-    order_state_id INT PRIMARY KEY AUTO_INCREMENT,
-    order_id INT,
-    state ENUM('Validated', 'Cancelled', 'Other'),
-    FOREIGN KEY (order_id) REFERENCES Orders(order_id)
 );
 -- Add your sample data for users
 INSERT INTO Users (

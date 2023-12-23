@@ -20,7 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $disabled = isset($_POST['disabled']) ? 1 : 0; // Check if disabled checkbox is checked
 
     // Handle image upload using the ImageUploader class
-    $imagePath = ImageUploader::uploadImage();
+    $targetDirectory = '../imgs'; // Change this to your desired directory
+    $inputName = 'image';
+    $imagePath = ImageUploader::uploadImage($inputName, $targetDirectory);
 
     // Check if image upload was successful
     if (!$imagePath) {

@@ -19,8 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category_id = isset($_POST['category_id']) ? $_POST['category_id'] : '';
     $disabled = isset($_POST['disabled']) ? 1 : 0; // Check if disabled checkbox is checked
 
-    // Handle image upload using the ImageUploader class
-    $imagePath = ImageUploader::uploadImage();
+    $targetDirectory = '../imgs'; // Change this to your desired directory
+    $inputName = 'image';
+    $imagePath = ImageUploader::uploadImage($inputName, $targetDirectory);
 
     // Check if image upload was successful
     if (!$imagePath) {
@@ -45,17 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Use the ProductDAO to edit the product
         $productDAO = new ProductDAO();
-        $success = $productDAO->updateProduct($editedProduct);
-
-        // Check if the product was successfully edited
-        if ($success) {
-            // Redirect to the product management page or display a success message
-            header("Location: dashboard.php?page=product-management");
-            exit();
-        } else {
-            // Display an error message
-            $errorMessage = "Failed to edit the product.";
-        }
+        $productDAO->updateProduct($editedProduct);
+        // Redirect or display an error message
+        header("Location: dashboard.php?page=product-management");
+        exit();
     }
 } else {
     // Retrieve the product ID from the query parameters
