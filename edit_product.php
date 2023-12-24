@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category_id = isset($_POST['category_id']) ? $_POST['category_id'] : '';
     $disabled = isset($_POST['disabled']) ? 1 : 0; // Check if disabled checkbox is checked
 
-    $targetDirectory = '../imgs'; // Change this to your desired directory
+    $targetDirectory = 'imgs'; // Change this to your desired directory
     $inputName = 'image';
     $imagePath = ImageUploader::uploadImage($inputName, $targetDirectory);
 

@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $categoryName = isset($_POST['category_name']) ? $_POST['category_name'] : '';
     $isDisabled = isset($_POST['is_disabled']) ? 1 : 0;
 
-    $targetDirectory = '../imgs'; // Change this to your desired directory
+    $targetDirectory = 'imgs'; // Change this to your desired directory
     $inputName = 'category_image';
     $imagePath = ImageUploader::uploadImage($inputName, $targetDirectory);
     // Check if image upload was successful
@@ -54,17 +54,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Display error message if any -->
         <?php if (isset($errorMessage)) : ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded relative" role="alert">
-                <strong class="font-bold">Error!</strong>
-                <span class="block sm:inline"><?= $errorMessage ?></span>
-            </div>
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded relative" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline"><?= $errorMessage ?></span>
+        </div>
         <?php endif; ?>
 
         <!-- Category Form -->
         <form action="" method="post" enctype="multipart/form-data">
             <div class="mb-4">
                 <label for="category_name" class="block text-gray-700 text-sm font-bold mb-2">Category Name:</label>
-                <input type="text" name="category_name" id="category_name" class="w-full border p-2 rounded-md focus:outline-none focus:ring focus:border-blue-300" required>
+                <input type="text" name="category_name" id="category_name"
+                    class="w-full border p-2 rounded-md focus:outline-none focus:ring focus:border-blue-300" required>
             </div>
 
             <div class="mb-4">
@@ -75,11 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Add the image upload field -->
             <div class="mb-4">
                 <label for="category_image" class="block text-gray-700 text-sm font-bold mb-2">Category Image:</label>
-                <input type="file" name="category_image" id="category_image" accept="image/*" class="border p-2 rounded-md focus:outline-none focus:ring focus:border-blue-300">
+                <input type="file" name="category_image" id="category_image" accept="image/*"
+                    class="border p-2 rounded-md focus:outline-none focus:ring focus:border-blue-300">
             </div>
 
             <div class="mt-4">
-                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-300">
+                <button type="submit"
+                    class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-300">
                     Add Category
                 </button>
             </div>

@@ -2,9 +2,6 @@
     // Include the database and BaseDAO classes
     require_once 'database.php';
     require_once 'classes.php';
-
-    // Check if the form is submitted
-    // Check if the form is submitted
     // Check if the form is submitted
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Get user ID from the form

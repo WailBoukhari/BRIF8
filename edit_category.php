@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $categoryName = isset($_POST['category_name']) ? $_POST['category_name'] : '';
     $isDisabled = isset($_POST['is_disabled']) ? 1 : 0;
 
-    $targetDirectory = '../imgs'; // Change this to your desired directory
+    $targetDirectory = 'imgs'; // Change this to your desired directory
     $inputName = 'category_image';
     $imagePath = ImageUploader::uploadImage($inputName, $targetDirectory);
 
