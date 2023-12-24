@@ -1,8 +1,8 @@
 <?php
 session_start(); // Start the session to store user data
 // Include the database and BaseDAO classes
-require_once '../Includes/database.php';
-require_once '../Includes/classes.php';
+require_once 'database.php';
+require_once 'classes.php';
 
 // Check if the form is submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

@@ -1,7 +1,7 @@
 <?php
 // Include the database and BaseDAO classes
-require_once '../Includes/database.php';
-require_once '../Includes/classes.php';
+require_once 'database.php';
+require_once 'classes.php';
 
 
 if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['id'])) {

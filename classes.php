@@ -158,13 +158,18 @@ class UserDAO extends BaseDAO
             if (!$disabled) {
                 // Check if the user is verified
                 if ($verified) {
+                    // Store user data in the session
+                    $_SESSION['user']['user_id'] = $user['user_id'];
+                    $_SESSION['user']['username'] = $user['username'];
+                    $_SESSION['user']['role'] = $role;
+
                     if ($role == 'admin') {
                         // Redirect to a dashboard for admin
-                        header('Location: dashboard.php');
+                        header('Location: products.php');
                         exit();
                     } else {
                         // Redirect to index for regular user
-                        header('Location: ../index.php');
+                        header('Location: products.php');
                         exit();
                     }
                 } else {
@@ -192,6 +197,37 @@ class UserDAO extends BaseDAO
         $users = $statement->fetchAll(PDO::FETCH_ASSOC);
 
         return $users;
+    }
+    public function addUser(User $user)
+    {
+        $query = "INSERT INTO Users (username, email, password, role, verified, full_name, phone_number, address, disabled, city) 
+                  VALUES (:username, :email, :password, :role, :verified, :full_name, :phone_number, :address, :disabled, :city)";
+
+        $stmt = $this->db->prepare($query);
+
+        $username = $user->getUsername();
+        $email = $user->getEmail();
+        $password = $user->getPassword();
+        $role = $user->getRole();
+        $verified = $user->getVerified() ? 1 : 0;
+        $full_name = $user->getFullName();
+        $phone_number = $user->getPhoneNumber();
+        $address = $user->getAddress();
+        $disabled = $user->getDisabled() ? 1 : 0;
+        $city = $user->getCity();
+
+        $stmt->bindParam(':username', $username);
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':password', $password);
+        $stmt->bindParam(':role', $role);
+        $stmt->bindParam(':verified', $verified, PDO::PARAM_INT);
+        $stmt->bindParam(':full_name', $full_name);
+        $stmt->bindParam(':phone_number', $phone_number);
+        $stmt->bindParam(':address', $address);
+        $stmt->bindParam(':disabled', $disabled, PDO::PARAM_INT);
+        $stmt->bindParam(':city', $city);
+
+        return $stmt->execute();
     }
     public function getUserById($userId)
     {
@@ -476,9 +512,29 @@ class CategoryDAO extends BaseDAO
             return null; // User not found
         }
     }
+    public function getCategories()
+    {
+        $query = "SELECT * FROM Categories"; // Replace 'categories' with your actual table name
+        $statement = $this->db->prepare($query);
+        $statement->execute();
+
+        // Fetch all categories
+        $categories = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        // Convert the associative array to an array of Category objects
+        $categoryObjects = [];
+        foreach ($categories as $category) {
+            $categoryObjects[] = new Category(
+                $category['category_id'],
+                $category['category_name'],
+                $category['category_img'],
+                $category['is_disabled']
+            );
+        }
+
+        return $categoryObjects;
+    }
 }
-
-
 class Product
 {
     private $product_id;
@@ -642,39 +698,57 @@ class ProductDAO extends BaseDAO
     }
     public function getProductsByCategory($categoryId)
     {
+
+        $sql = 'SELECT * FROM Products WHERE category_id = :categoryId AND disabled = FALSE';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $products = [];
+
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $product = new Product(
+                $row['reference'],
+                $row['image'],
+                $row['barcode'],
+                $row['label'],
+                $row['purchase_price'],
+                $row['final_price'],
+                $row['price_offer'],
+                $row['description'],
+                $row['min_quantity'],
+                $row['stock_quantity'],
+                $row['category_id'],
+                $row['disabled']
+            );
+
+
+            $products[] = $product;
+        }
+
+        return $products;
+    }
+    public function getProductCategories()
+    {
+        $categories = [];
+
+        // Replace 'Categories' with the actual name of your categories table
+        $query = "SELECT DISTINCT category_name FROM Categories";
+
         try {
-            $sql = 'SELECT * FROM Products WHERE category_id = :categoryId AND disabled = FALSE';
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
+            $stmt = $this->db->prepare($query);
             $stmt->execute();
 
-            $products = [];
-
+            // Fetch all unique categories from the database
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $product = new Product(
-                    $row['reference'],
-                    $row['image'],
-                    $row['barcode'],
-                    $row['label'],
-                    $row['purchase_price'],
-                    $row['final_price'],
-                    $row['price_offer'],
-                    $row['description'],
-                    $row['min_quantity'],
-                    $row['stock_quantity'],
-                    $row['category_id'],
-                    $row['disabled']
-                );
-
-                // Add more attributes if needed
-
-                $products[] = $product;
+                $categories[] = $row['category_name'];
             }
-
-            return $products;
         } catch (PDOException $e) {
-            throw new Exception('Error getting products by category: ' . $e->getMessage());
+            // Handle database errors if needed
+            echo "Error: " . $e->getMessage();
         }
+
+        return $categories;
     }
     public function updateProduct(Product $product)
     {
@@ -813,12 +887,60 @@ class ProductDAO extends BaseDAO
 
         return $productObjects;
     }
+
+    public function getProductsPaginated($offset, $productsPerPage, $categoryFilter = '')
+    {
+        $sql = 'SELECT * FROM products WHERE disabled = FALSE';
+
+        // Check if a category filter is provided
+        if (!empty($categoryFilter)) {
+            $sql .= ' AND category_id = :categoryFilter';
+        }
+
+        $sql .= ' LIMIT :offset, :productsPerPage';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->bindValue(':productsPerPage', $productsPerPage, PDO::PARAM_INT);
+
+        // Bind the category filter parameter if it is provided
+        if (!empty($categoryFilter)) {
+            $stmt->bindValue(':categoryFilter', $categoryFilter, PDO::PARAM_STR);
+        }
+
+        $stmt->execute();
+
+        // Fetch results as associative array
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Convert the associative array to an array of Product objects
+        $productObjects = [];
+        foreach ($results as $result) {
+            $productObjects[] = new Product(
+                $result['product_id'],
+                $result['reference'],
+                $result['image'],
+                $result['barcode'],
+                $result['label'],
+                $result['purchase_price'],
+                $result['final_price'],
+                $result['price_offer'],
+                $result['description'],
+                $result['min_quantity'],
+                $result['stock_quantity'],
+                $result['category_id'],
+                $result['disabled']
+            );
+        }
+
+        return $productObjects;
+    }
 }
 
 
 class Order
 {
-
+    private $order_id;
+    private $user_id;
     private $order_date;
     private $send_date;
     private $delivery_date;
@@ -826,9 +948,11 @@ class Order
     private $order_status;
 
     // Constructor with optional parameters
-    public function __construct($user_id, $order_date, $send_date, $delivery_date, $total_price, $order_status = 'Pending')
+    public function __construct($order_id, $user_id, $order_date, $send_date, $delivery_date, $total_price, $order_status = 'Pending')
     {
-
+        $this->order_id = $order_id;
+        $this->user_id = $user_id;
+        $this->order_date = $order_date;
         $this->send_date = $send_date;
         $this->delivery_date = $delivery_date;
         $this->total_price = $total_price;
@@ -836,6 +960,15 @@ class Order
     }
 
     // Getter methods for retrieving private properties
+    public function getOrderId()
+    {
+        return $this->order_id;
+    }
+
+    public function getUserId()
+    {
+        return $this->user_id;
+    }
 
     public function getOrderDate()
     {
@@ -863,10 +996,53 @@ class Order
     }
 
     // Setter methods for updating private properties
+    public function setOrderId($order_id)
+    {
+        $this->order_id = $order_id;
+    }
+
+    public function setUserId($user_id)
+    {
+        $this->user_id = $user_id;
+    }
 }
 
 class OrderDAO extends BaseDAO
 {
+    public function getAllOrders()
+    {
+        $query = "SELECT * FROM Orders";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+
+        $orders = [];
+
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $order = new Order(
+                $row['user_id'],
+                $row['order_date'],
+                $row['send_date'],
+                $row['delivery_date'],
+                $row['total_price'],
+                $row['order_status']
+            );
+
+            // Add more properties if needed
+
+            $orders[] = $order;
+        }
+
+        return $orders;
+    }
+
+    public function updateOrderStatus($orderId, $newStatus)
+    {
+        $query = "UPDATE Orders SET order_status = :new_status WHERE order_id = :order_id";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':new_status', $newStatus);
+        $stmt->bindParam(':order_id', $orderId);
+        $stmt->execute();
+    }
     public function addOrder(Order $order)
     {
         $query = "INSERT INTO Orders (user_id, order_date, send_date, delivery_date, total_price, order_status) 
@@ -874,14 +1050,18 @@ class OrderDAO extends BaseDAO
 
         $stmt = $this->db->prepare($query);
 
-
+        $stmt->bindParam(':user_id', $order->getUserId());
         $stmt->bindParam(':order_date', $order->getOrderDate());
         $stmt->bindParam(':send_date', $order->getSendDate());
         $stmt->bindParam(':delivery_date', $order->getDeliveryDate());
         $stmt->bindParam(':total_price', $order->getTotalPrice());
         $stmt->bindParam(':order_status', $order->getOrderStatus());
 
-        return $stmt->execute();
+        // Execute the statement
+        $stmt->execute();
+
+        // Return the last inserted order ID
+        return $this->db->lastInsertId();
     }
 
     public function updateOrder(Order $order)
@@ -927,6 +1107,18 @@ class OrderDAO extends BaseDAO
         $stmt->execute();
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    public function getLatestOrderId()
+    {
+        // Assuming 'order_id' is your auto-incremented primary key
+        $query = "SELECT MAX(order_id) AS latest_order_id FROM Orders";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $result['latest_order_id'] ?? null;
     }
 
     // Add more methods as needed, such as getOrderByUser, getAllOrders, etc.
@@ -1059,188 +1251,18 @@ class OrderDetailDAO extends BaseDAO
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+    public function getOrderDetailsByOrderId($order_id)
+    {
+        $query = "SELECT * FROM OrderDetails WHERE order_id = :order_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':order_id', $order_id);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     // Add more methods as needed, such as getOrderDetailsByOrderId, getAllOrderDetails, etc.
-}
-
-class UserState
-{
-    private $client_state_id;
-
-    private $state;
-
-    // Constructor with optional parameters
-    public function __construct($user_id, $state)
-    {
-
-        $this->state = $state;
-    }
-
-    // Getter methods for retrieving private properties
-    public function getClientStateId()
-    {
-        return $this->client_state_id;
-    }
-
-
-
-    public function getState()
-    {
-        return $this->state;
-    }
-
-    // Setter methods for updating private properties
-    public function setClientStateId($client_state_id)
-    {
-        $this->client_state_id = $client_state_id;
-    }
-}
-
-class UserStateDAO extends BaseDAO
-{
-    public function addUserState(UserState $userState)
-    {
-        $query = "INSERT INTO UserStates (user_id, state) 
-                  VALUES (:user_id, :state)";
-
-        $stmt = $this->db->prepare($query);
-
-
-        $stmt->bindParam(':state', $userState->getState());
-
-        return $stmt->execute();
-    }
-
-    public function updateUserState(UserState $userState)
-    {
-        $query = "UPDATE UserStates SET 
-                  user_id = :user_id,
-                  state = :state
-                  WHERE client_state_id = :client_state_id";
-
-        $stmt = $this->db->prepare($query);
-
-
-        $stmt->bindParam(':state', $userState->getState());
-        $stmt->bindParam(':client_state_id', $userState->getClientStateId());
-
-        return $stmt->execute();
-    }
-
-    public function deleteUserState($client_state_id)
-    {
-        $query = "DELETE FROM UserStates WHERE client_state_id = :client_state_id";
-
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':client_state_id', $client_state_id);
-
-        return $stmt->execute();
-    }
-
-    public function getUserStateById($client_state_id)
-    {
-        $query = "SELECT * FROM UserStates WHERE client_state_id = :client_state_id";
-
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':client_state_id', $client_state_id);
-        $stmt->execute();
-
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    // Add more methods as needed, such as getUserStateByUserId, getAllUserStates, etc.
-}
-
-
-class OrderState
-{
-    private $order_state_id;
-    private $order_id;
-    private $state;
-
-    // Constructor with optional parameters
-    public function __construct($order_id, $state)
-    {
-        $this->order_id = $order_id;
-        $this->state = $state;
-    }
-
-    // Getter methods for retrieving private properties
-    public function getOrderStateId()
-    {
-        return $this->order_state_id;
-    }
-
-    public function getOrderId()
-    {
-        return $this->order_id;
-    }
-
-    public function getState()
-    {
-        return $this->state;
-    }
-
-    // Setter methods for updating private properties
-    public function setOrderStateId($order_state_id)
-    {
-        $this->order_state_id = $order_state_id;
-    }
-}
-
-class OrderStateDAO extends BaseDAO
-{
-    public function addOrderState(OrderState $orderState)
-    {
-        $query = "INSERT INTO OrderStates (order_id, state) 
-                  VALUES (:order_id, :state)";
-
-        $stmt = $this->db->prepare($query);
-
-        $stmt->bindParam(':order_id', $orderState->getOrderId());
-        $stmt->bindParam(':state', $orderState->getState());
-
-        return $stmt->execute();
-    }
-
-    public function updateOrderState(OrderState $orderState)
-    {
-        $query = "UPDATE OrderStates SET 
-                  order_id = :order_id,
-                  state = :state
-                  WHERE order_state_id = :order_state_id";
-
-        $stmt = $this->db->prepare($query);
-
-        $stmt->bindParam(':order_id', $orderState->getOrderId());
-        $stmt->bindParam(':state', $orderState->getState());
-        $stmt->bindParam(':order_state_id', $orderState->getOrderStateId());
-
-        return $stmt->execute();
-    }
-
-    public function deleteOrderState($order_state_id)
-    {
-        $query = "DELETE FROM OrderStates WHERE order_state_id = :order_state_id";
-
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':order_state_id', $order_state_id);
-
-        return $stmt->execute();
-    }
-
-    public function getOrderStateById($order_state_id)
-    {
-        $query = "SELECT * FROM OrderStates WHERE order_state_id = :order_state_id";
-
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':order_state_id', $order_state_id);
-        $stmt->execute();
-
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    // Add more methods as needed, such as getOrderStateByOrderId, getAllOrderStates, etc.
 }
 class ImageUploader
 {

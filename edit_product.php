@@ -1,7 +1,7 @@
 <?php
 session_start();
-require_once '../Includes/database.php';
-require_once '../Includes/classes.php';
+require_once 'database.php';
+require_once 'classes.php';
 
 // Check if the form is submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

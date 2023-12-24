@@ -1,7 +1,7 @@
 <?php
 // Include necessary files and classes
-require_once '../Includes/database.php';
-require_once '../Includes/classes.php';
+require_once 'database.php';
+require_once 'classes.php';
 // Check if the form is submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get user input
@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $hashedPassword = sha1($password);
 
     // Create a new user instance
-    $user = new User($username, $email, $hashedPassword, 'user', false, $fullName, $phoneNumber, $address, false, $city);
+    $user = new User(0, $username, $email, $hashedPassword, 'user', false, $fullName, $phoneNumber, $address, false, $city);
 
     // Create a new instance of UserDAO and add the user to the database
     $userDAO = new UserDAO();
@@ -92,7 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="text" name="city" required class="mt-1 p-2 w-full border rounded">
                 </div>
 
-                <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700">Register</button>
+                <button type="submit"
+                    class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700">Register</button>
             </form>
         </div>
         <script src="https://cdn.tailwindcss.com"></script>

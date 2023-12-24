@@ -1,8 +1,7 @@
 <?php
 session_start(); // Start the session to store user data
-// Include the database and BaseDAO classes
-require_once '../Includes/database.php';
-require_once '../Includes/classes.php';
+require_once 'database.php';
+require_once 'classes.php';
 
 // Function to authenticate user
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -14,13 +13,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userDAO = new UserDAO();
 
     // Perform authentication
-    if ($userDAO->authenticateUser($username, $password)) {
-        // Authentication successful, store user data in the session
-        $_SESSION['username'] = $username;
+    $authenticatedUser = $userDAO->authenticateUser($username, $password);
+
+    if ($authenticatedUser) {
+        // Redirect to the product page after successful login
+        header("Location: products.php");
+        exit();
     } else {
         // Authentication failed, show an error message
         $error_message = 'Invalid username or password';
     }
+}
+
+// Debugging: Print any error message
+if (isset($error_message)) {
+    echo '<p style="color: red;">' . $error_message . '</p>';
 }
 ?>
 
@@ -36,7 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="bg-gray-100 flex items-center justify-center h-screen">
     <div class="bg-white p-8 rounded shadow-md w-96">
         <h2 class="text-2xl font-semibold mb-4">
-            Login</h2>
+            Login
+        </h2>
         <form method="post" action="" class="space-y-4">
             <div>
                 <label for="username" class="block text-sm font-medium text-gray-600">Username:</label>
